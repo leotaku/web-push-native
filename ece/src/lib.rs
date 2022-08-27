@@ -93,7 +93,7 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
     Ok(record)
 }
 
-fn encrypt<R: Iterator<Item = Vec<u8>>, KI: AsRef<[u8]>>(
+pub fn encrypt<R: Iterator<Item = Vec<u8>>, KI: AsRef<[u8]>>(
     ikm: [u8; 16],
     salt: [u8; 16],
     keyid: KI,
