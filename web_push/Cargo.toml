@@ -1,0 +1,14 @@
+[package]
+name = "web-push"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aes-gcm = "0.10.1"
+base64 = "0.13.0"
+ece-native = { path = "../ece" }
+hkdf = "0.12.3"
+http = "0.2.8"
+jwt-simple = "0.11.0"
+p256 = { version = "0.10.1", features = ["ecdh"] }
+sha2 = "0.10.2"
