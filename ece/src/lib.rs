@@ -1,15 +1,18 @@
 #[cfg(test)]
 mod tests;
 
-use aes_gcm::{aead::consts::U12, AeadInPlace, Aes128Gcm, KeyInit, Nonce};
+use aes_gcm::{
+    aead::{consts::U12, generic_array::typenum::Unsigned, Tag},
+    AeadInPlace, Aes128Gcm, KeyInit, Nonce,
+};
 use hkdf::Hkdf;
 use sha2::Sha256;
 
 #[derive(Debug)]
 pub enum Error {
+    HeaderLengthInvalid,
     KeyIdLengthInvalid,
     RecordLengthInvalid,
-    LengthInvalid,
     PaddingInvalid,
     AesGcm,
 }
@@ -133,23 +136,51 @@ pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
     Ok(output)
 }
 
-pub fn decrypt<IKM: AsRef<[u8]>>(ikm: IKM, payload: Vec<u8>) -> Result<Vec<u8>, Error> {
+fn decrypt_record<'a>(
+    key: &aes_gcm::Key<Aes128Gcm>,
+    nonce: &Nonce<U12>,
+    record: &'a mut [u8],
+    is_last: bool,
+) -> Result<&'a [u8], Error> {
+    if record.len() < <Aes128Gcm as aes_gcm::AeadCore>::TagSize::to_usize() {
+        return Err(Error::RecordLengthInvalid);
+    }
+    let tag_pos = record.len() - <Aes128Gcm as aes_gcm::AeadCore>::TagSize::to_usize();
+    let (msg, tag) = record.as_mut().split_at_mut(tag_pos);
+
+    Aes128Gcm::new(&key)
+        .decrypt_in_place_detached(&nonce, b"", msg, Tag::<Aes128Gcm>::from_slice(tag))
+        .map_err(|_| Error::AesGcm)?;
+
+    let pad_index = msg
+        .as_ref()
+        .iter()
+        .rposition(|it| *it != 0)
+        .ok_or_else(|| Error::PaddingInvalid)?;
+    match msg.as_ref()[pad_index] {
+        2 if !is_last => Err(Error::PaddingInvalid),
+        1 if is_last => Err(Error::PaddingInvalid),
+        _ => Ok(&msg[..pad_index]),
+    }
+}
+
+pub fn decrypt<IKM: AsRef<[u8]>>(ikm: IKM, mut payload: Vec<u8>) -> Result<Vec<u8>, Error> {
     if payload.len() < 21 {
-        return Err(Error::LengthInvalid);
+        return Err(Error::HeaderLengthInvalid);
     }
 
-    let mut output = Vec::new();
-    let salt = payload[..16].try_into().unwrap();
-    let encrypted_record_size = u32::from_be_bytes(payload[16..16 + 4].try_into().unwrap());
-    let idlen = payload[20] as usize;
+    let (header, keyid_and_records) = payload.split_at_mut(21);
+    let salt = header[..16].try_into().unwrap();
+    let encrypted_record_size = u32::from_be_bytes(header[16..16 + 4].try_into().unwrap());
+    let idlen = header[20] as usize;
 
-    if payload.len() < 21 + idlen {
-        return Err(Error::LengthInvalid);
+    if keyid_and_records.len() < idlen {
+        return Err(Error::KeyIdLengthInvalid);
     }
 
-    let body = &payload[21 + idlen..];
-    let records = body
-        .chunks(
+    let (_, records) = keyid_and_records.split_at_mut(idlen);
+    let records = records
+        .chunks_mut(
             encrypted_record_size
                 .try_into()
                 .map_err(|_| Error::RecordLengthInvalid)?,
@@ -163,25 +194,13 @@ pub fn decrypt<IKM: AsRef<[u8]>>(ikm: IKM, payload: Vec<u8>) -> Result<Vec<u8>, 
             (key, nonce, record)
         });
 
+    let mut output = Vec::new();
+
     let mut peekable = records.peekable();
     while let Some((key, nonce, record)) = peekable.next() {
-        let mut record = record.to_owned();
-        Aes128Gcm::new(&key)
-            .decrypt_in_place(&nonce, b"", &mut record)
-            .map_err(|_| Error::AesGcm)?;
-
         let is_last_record = peekable.peek().is_none();
-        let pad_index = record
-            .iter()
-            .rposition(|it| *it != 0)
-            .ok_or_else(|| Error::PaddingInvalid)?;
-        match record[pad_index] {
-            2 if !is_last_record => Err(Error::PaddingInvalid)?,
-            1 if is_last_record => Err(Error::PaddingInvalid)?,
-            _ => (),
-        };
-
-        output.extend_from_slice(&record[..pad_index])
+        let plaintext = decrypt_record(&key, &nonce, record, is_last_record)?;
+        output.extend_from_slice(plaintext)
     }
 
     Ok(output)
