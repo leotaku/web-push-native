@@ -9,6 +9,8 @@ use sha2::Sha256;
 pub enum Error {
     KeyIdLengthInvalid,
     RecordLengthInvalid,
+    LengthInvalid,
+    PaddingInvalid,
     AesGcm,
 }
 
@@ -126,6 +128,60 @@ pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
         let is_last_record = peekable.peek().is_none();
         let record = encrypt_record(&key, &nonce, record, encrypted_record_size, is_last_record)?;
         output.extend(record);
+    }
+
+    Ok(output)
+}
+
+pub fn decrypt<IKM: AsRef<[u8]>>(ikm: IKM, payload: Vec<u8>) -> Result<Vec<u8>, Error> {
+    if payload.len() < 21 {
+        return Err(Error::LengthInvalid);
+    }
+
+    let mut output = Vec::new();
+    let salt = payload[..16].try_into().unwrap();
+    let encrypted_record_size = u32::from_be_bytes(payload[16..16 + 4].try_into().unwrap());
+    let idlen = payload[20] as usize;
+
+    if payload.len() < 21 + idlen {
+        return Err(Error::LengthInvalid);
+    }
+
+    let body = &payload[21 + idlen..];
+    let records = body
+        .chunks(
+            encrypted_record_size
+                .try_into()
+                .map_err(|_| Error::RecordLengthInvalid)?,
+        )
+        .enumerate()
+        .map(|(n, record)| {
+            let mut seq = [0u8; 12];
+            seq[4..].copy_from_slice(&n.to_be_bytes());
+            let nonce = derive_nonce(salt, ikm.as_ref(), seq);
+            let key = derive_key(salt, ikm.as_ref());
+            (key, nonce, record)
+        });
+
+    let mut peekable = records.peekable();
+    while let Some((key, nonce, record)) = peekable.next() {
+        let mut record = record.to_owned();
+        Aes128Gcm::new(&key)
+            .decrypt_in_place(&nonce, b"", &mut record)
+            .map_err(|_| Error::AesGcm)?;
+
+        let is_last_record = peekable.peek().is_none();
+        let pad_index = record
+            .iter()
+            .rposition(|it| *it != 0)
+            .ok_or_else(|| Error::PaddingInvalid)?;
+        match record[pad_index] {
+            2 if !is_last_record => Err(Error::PaddingInvalid)?,
+            1 if is_last_record => Err(Error::PaddingInvalid)?,
+            _ => (),
+        };
+
+        output.extend_from_slice(&record[..pad_index])
     }
 
     Ok(output)
