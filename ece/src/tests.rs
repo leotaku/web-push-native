@@ -18,7 +18,7 @@ macro_rules! DECODE {
 mod rfc8188_example1 {
     use super::*;
 
-    pub(crate) const PLAINTEXT: &[u8] = "I am the walrus".as_bytes();
+    pub(crate) const PLAINTEXT: &[u8] = b"I am the walrus";
     const RS: u32 = 4096;
     const IKM: Lazy<[u8; 16]> = DECODE!("yqdlZ-tYemfogSmv7Ws5PQ");
     const KEYID: &[u8] = "".as_bytes();
