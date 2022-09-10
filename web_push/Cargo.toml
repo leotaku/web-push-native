@@ -9,6 +9,6 @@ base64 = "0.13.0"
 ece-native = { path = "../ece" }
 hkdf = "0.12.3"
 http = "0.2.8"
-jwt-simple = "0.11.0"
-p256 = { version = "0.10.1", features = ["ecdh"] }
+jwt-simple = { git = "https://github.com/jedisct1/rust-jwt-simple.git" }
+p256 = { version = "0.11.1", features = ["ecdh"] }
 sha2 = "0.10.2"

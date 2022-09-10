@@ -1,14 +1,25 @@
-use aes_gcm::aead::{rand_core::RngCore, OsRng};
-use ece_native;
+use aes_gcm::aead::{
+    generic_array::{typenum::U16, GenericArray},
+    rand_core::RngCore,
+    OsRng,
+};
 use hkdf::Hkdf;
 use http::{self, header, Request, Uri};
-use jwt_simple::prelude::*;
-use p256::{ecdh::EphemeralSecret, elliptic_curve::sec1::ToEncodedPoint};
+use jwt_simple::{
+    algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256PublicKey},
+    claims::Claims,
+    prelude::Duration,
+};
+use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 
 pub type WebPushError = Box<dyn std::error::Error>;
 
 pub type P256PublicKey = p256::PublicKey;
+
+pub type P256SecretKey = p256::SecretKey;
+
+pub type Auth = GenericArray<u8, U16>;
 
 pub type ES256KeyPair = jwt_simple::algorithms::ES256KeyPair;
 
@@ -16,6 +27,7 @@ pub type ES256KeyPair = jwt_simple::algorithms::ES256KeyPair;
 pub struct WebPushBuilder {
     uri: Uri,
     ua_public: P256PublicKey,
+    ua_auth: Auth,
     vapid_sign: VapidSignature,
 }
 
@@ -24,12 +36,14 @@ impl WebPushBuilder {
         uri: Uri,
         vapid_kp: ES256KeyPair,
         ua_public: P256PublicKey,
+        ua_auth: Auth,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let vapid_sign = vapid_sign(&uri, vapid_kp)?;
         Ok(Self {
             uri,
-            vapid_sign,
             ua_public,
+            ua_auth,
+            vapid_sign,
         })
     }
 
@@ -37,7 +51,9 @@ impl WebPushBuilder {
         &self,
         body: T,
     ) -> Result<http::request::Request<Vec<u8>>, WebPushError> {
-        let payload = encrypt(body.into(), &self.ua_public).map_err(|_| ":(")?;
+        let body = body.into();
+
+        let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
         let request = Request::builder()
             .uri(self.uri.clone())
             .method(http::method::Method::POST)
@@ -55,16 +71,32 @@ impl WebPushBuilder {
 pub fn encrypt(
     plaintext: Vec<u8>,
     ua_public: &P256PublicKey,
+    ua_auth: &Auth,
 ) -> Result<Vec<u8>, ece_native::Error> {
-    let as_ephemeral = EphemeralSecret::random(&mut OsRng);
-    let as_public = as_ephemeral.public_key();
-    let shared = as_ephemeral.diffie_hellman(ua_public);
     let mut salt = [0u8; 16];
-    RngCore::fill_bytes(&mut OsRng, &mut salt[..]);
+    OsRng.fill_bytes(&mut salt);
+    let as_secret = P256SecretKey::random(&mut OsRng);
+    encrypt_predictably(salt, plaintext, &as_secret, ua_public, ua_auth)
+}
 
-    let ikm = compute_ikm(salt, &shared, ua_public, &as_public);
+fn encrypt_predictably(
+    salt: [u8; 16],
+    plaintext: Vec<u8>,
+    as_secret: &P256SecretKey,
+    ua_public: &P256PublicKey,
+    ua_auth: &Auth,
+) -> Result<Vec<u8>, ece_native::Error> {
+    let as_public = as_secret.public_key();
+    let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
+
+    let ikm = compute_ikm(
+        ua_auth.as_slice().try_into().unwrap(),
+        &shared,
+        ua_public,
+        &as_public,
+    );
     let keyid = as_public.as_affine().to_encoded_point(false);
-    let encrypted_record_length = (plaintext.len() + 16)
+    let encrypted_record_length = (plaintext.len() + 17)
         .try_into()
         .map_err(|_| ece_native::Error::RecordLengthInvalid)?;
 
@@ -77,28 +109,50 @@ pub fn encrypt(
     )
 }
 
+pub fn decrypt(
+    ciphertext: Vec<u8>,
+    as_secret: &P256SecretKey,
+    ua_auth: &Auth,
+) -> Result<Vec<u8>, ece_native::Error> {
+    let idlen = ciphertext[20];
+    let keyid = &ciphertext[21..21 + (idlen as usize)];
+
+    let ua_public =
+        p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::AesGcm)?;
+    let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
+
+    let ikm = compute_ikm(
+        ua_auth.as_slice().try_into().unwrap(),
+        &shared,
+        &as_secret.public_key(),
+        &ua_public,
+    );
+
+    ece_native::decrypt(ikm, ciphertext)
+}
+
 fn compute_ikm(
     salt: [u8; 16],
     shared: &p256::ecdh::SharedSecret,
     ua_public: &p256::PublicKey,
     as_public: &p256::PublicKey,
-) -> [u8; 16] {
+) -> [u8; 32] {
     let mut info = Vec::new();
     info.extend_from_slice(&b"WebPush: info"[..]);
     info.push(0u8);
     info.extend_from_slice(ua_public.as_affine().to_encoded_point(false).as_bytes());
     info.extend_from_slice(as_public.as_affine().to_encoded_point(false).as_bytes());
 
-    let mut ikm = [0u8; 16];
-    let hk = Hkdf::<Sha256>::new(Some(&salt), shared.as_bytes());
-    hk.expand(&info, &mut ikm)
-        .expect("okm length is always 16 bytes, cannot be too large");
+    let mut okm = [0u8; 32];
+    let hk = Hkdf::<Sha256>::new(Some(&salt), shared.raw_secret_bytes().as_ref());
+    hk.expand(&info, &mut okm)
+        .expect("okm length is always 32 bytes, cannot be too large");
 
-    ikm
+    okm
 }
 
 #[derive(Clone, Debug)]
-pub struct VapidSignature {
+struct VapidSignature {
     token: String,
     public_key: ES256PublicKey,
 }
