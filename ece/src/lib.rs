@@ -20,17 +20,17 @@ impl std::fmt::Display for Error {
     }
 }
 
-fn derive_key(salt: [u8; 16], ikm: [u8; 16]) -> aes_gcm::Key<Aes128Gcm> {
+fn derive_key<IKM: AsRef<[u8]>>(salt: [u8; 16], ikm: IKM) -> aes_gcm::Key<Aes128Gcm> {
     let info = b"Content-Encoding: aes128gcm\0";
     let mut okm = [0u8; 16];
-    let hk = Hkdf::<Sha256>::new(Some(&salt), &ikm);
+    let hk = Hkdf::<Sha256>::new(Some(&salt), ikm.as_ref());
     hk.expand(info, &mut okm)
         .expect("okm length is always 16, impossile for it to be too large");
 
     aes_gcm::Key::<Aes128Gcm>::from(okm)
 }
 
-fn derive_nonce(salt: [u8; 16], ikm: [u8; 16], seq: [u8; 12]) -> Nonce<U12> {
+fn derive_nonce<IKM: AsRef<[u8]>>(salt: [u8; 16], ikm: IKM, seq: [u8; 12]) -> Nonce<U12> {
     let info = b"Content-Encoding: nonce\0";
     let mut okm = [0u8; 12];
     let hk = Hkdf::<Sha256>::new(Some(salt.as_ref()), ikm.as_ref());
@@ -101,8 +101,8 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
     Ok(record)
 }
 
-pub fn encrypt<R: Iterator<Item = Vec<u8>>, KI: AsRef<[u8]>>(
-    ikm: [u8; 16],
+pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
+    ikm: IKM,
     salt: [u8; 16],
     keyid: KI,
     records: R,
@@ -113,8 +113,8 @@ pub fn encrypt<R: Iterator<Item = Vec<u8>>, KI: AsRef<[u8]>>(
     let records = records.enumerate().map(|(n, record)| {
         let mut seq = [0u8; 12];
         seq[4..].copy_from_slice(&n.to_be_bytes());
-        let key = derive_key(salt, ikm);
-        let nonce = derive_nonce(salt, ikm, seq);
+        let key = derive_key(salt, ikm.as_ref());
+        let nonce = derive_nonce(salt, ikm.as_ref(), seq);
         (key, nonce, record)
     });
 
