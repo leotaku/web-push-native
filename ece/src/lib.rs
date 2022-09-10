@@ -12,6 +12,14 @@ pub enum Error {
     AesGcm,
 }
 
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        std::fmt::Debug::fmt(self, f)
+    }
+}
+
 fn derive_key(salt: [u8; 16], ikm: [u8; 16]) -> aes_gcm::Key<Aes128Gcm> {
     let info = b"Content-Encoding: aes128gcm\0";
     let mut okm = [0u8; 16];
