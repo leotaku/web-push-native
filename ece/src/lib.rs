@@ -76,7 +76,7 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
         .try_into()
         .map_err(|_| Error::RecordLengthInvalid)?;
 
-    if !(plain_record_size <= encrypted_record_size - 16) {
+    if !(plain_record_size < encrypted_record_size - 16) {
         return Err(Error::RecordLengthInvalid);
     }
 
