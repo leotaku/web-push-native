@@ -55,7 +55,7 @@ fn generate_encryption_header<KI: AsRef<[u8]>>(
     keyid: KI,
 ) -> Result<Vec<u8>, Error> {
     let mut header = Vec::new();
-    header.extend(&salt[..]);
+    header.extend_from_slice(&salt[..]);
     header.extend_from_slice(&record_size.to_be_bytes());
     let keyid = keyid.as_ref();
     header.push(
@@ -124,13 +124,13 @@ pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
     });
 
     let mut output = Vec::new();
-    output.extend(header);
+    output.extend_from_slice(&header);
 
     let mut peekable = records.peekable();
     while let Some((key, nonce, record)) = peekable.next() {
         let is_last_record = peekable.peek().is_none();
         let record = encrypt_record(&key, &nonce, record, encrypted_record_size, is_last_record)?;
-        output.extend(record);
+        output.extend_from_slice(&record);
     }
 
     Ok(output)
