@@ -1,3 +1,6 @@
+#[cfg(test)]
+mod tests;
+
 pub use jwt_simple;
 pub use p256;
 
