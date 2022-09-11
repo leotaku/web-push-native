@@ -68,6 +68,15 @@ mod rfc8188_example1 {
         assert_eq!(encrypted[21..], ENCRYPTED[21..]);
         assert_eq!(encrypted, &ENCRYPTED[..]);
     }
+
+    #[test]
+    fn test_encryption_decryption() {
+        let encrypted =
+            encrypt(*IKM, *SALT, KEYID, Some(PLAINTEXT.to_vec()).into_iter(), RS).unwrap();
+        let decrypted = decrypt(*IKM, encrypted).unwrap();
+
+        assert_eq!(decrypted, PLAINTEXT.to_vec());
+    }
 }
 
 mod rfc8188_example2 {
@@ -100,5 +109,20 @@ mod rfc8188_example2 {
         );
         assert_eq!(encrypted[21..], ENCRYPTED[21..]);
         assert_eq!(encrypted, &ENCRYPTED[..]);
+    }
+
+    #[test]
+    fn test_encryption_decryption() {
+        let encrypted = encrypt(
+            *IKM,
+            *SALT,
+            &*KEYID,
+            vec![PLAINTEXT[..7].to_vec(), PLAINTEXT[7..7 + 8].to_vec()].into_iter(),
+            RS,
+        )
+        .unwrap();
+        let decrypted = decrypt(*IKM, encrypted).unwrap();
+
+        assert_eq!(decrypted, PLAINTEXT.to_vec());
     }
 }
