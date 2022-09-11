@@ -1,3 +1,6 @@
+pub use jwt_simple;
+pub use p256;
+
 use aes_gcm::aead::{
     generic_array::{typenum::U16, GenericArray},
     rand_core::RngCore,
@@ -6,7 +9,7 @@ use aes_gcm::aead::{
 use hkdf::Hkdf;
 use http::{self, header, Request, Uri};
 use jwt_simple::{
-    algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256PublicKey},
+    algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256KeyPair, ES256PublicKey},
     claims::Claims,
     prelude::Duration,
 };
@@ -15,18 +18,12 @@ use sha2::Sha256;
 
 pub type WebPushError = Box<dyn std::error::Error>;
 
-pub type P256PublicKey = p256::PublicKey;
-
-pub type P256SecretKey = p256::SecretKey;
-
 pub type Auth = GenericArray<u8, U16>;
-
-pub type ES256KeyPair = jwt_simple::algorithms::ES256KeyPair;
 
 #[derive(Clone, Debug)]
 pub struct WebPushBuilder {
     uri: Uri,
-    ua_public: P256PublicKey,
+    ua_public: p256::PublicKey,
     ua_auth: Auth,
     vapid_sign: VapidSignature,
 }
@@ -35,7 +32,7 @@ impl WebPushBuilder {
     pub fn new<'a>(
         uri: Uri,
         vapid_kp: ES256KeyPair,
-        ua_public: P256PublicKey,
+        ua_public: p256::PublicKey,
         ua_auth: Auth,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let vapid_sign = vapid_sign(&uri, vapid_kp)?;
@@ -70,20 +67,20 @@ impl WebPushBuilder {
 
 pub fn encrypt(
     plaintext: Vec<u8>,
-    ua_public: &P256PublicKey,
+    ua_public: &p256::PublicKey,
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, ece_native::Error> {
     let mut salt = [0u8; 16];
     OsRng.fill_bytes(&mut salt);
-    let as_secret = P256SecretKey::random(&mut OsRng);
+    let as_secret = p256::SecretKey::random(&mut OsRng);
     encrypt_predictably(salt, plaintext, &as_secret, ua_public, ua_auth)
 }
 
 fn encrypt_predictably(
     salt: [u8; 16],
     plaintext: Vec<u8>,
-    as_secret: &P256SecretKey,
-    ua_public: &P256PublicKey,
+    as_secret: &p256::SecretKey,
+    ua_public: &p256::PublicKey,
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, ece_native::Error> {
     let as_public = as_secret.public_key();
@@ -111,7 +108,7 @@ fn encrypt_predictably(
 
 pub fn decrypt(
     ciphertext: Vec<u8>,
-    as_secret: &P256SecretKey,
+    as_secret: &p256::SecretKey,
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, ece_native::Error> {
     let idlen = ciphertext[20];
