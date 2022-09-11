@@ -2,10 +2,6 @@ use super::*;
 use base64;
 use once_cell::sync::Lazy;
 
-fn cast_to_array<const N: usize>(input: impl AsRef<[u8]>) -> [u8; N] {
-    input.as_ref().try_into().unwrap()
-}
-
 macro_rules! DECODE {
     ($e:expr) => {
         Lazy::new(|| {
@@ -66,8 +62,8 @@ mod rfc8188_example1 {
         assert_eq!(encrypted.len(), ENCRYPTED.len());
         assert_eq!(encrypted[..16], ENCRYPTED[..16]);
         assert_eq!(
-            u32::from_be_bytes(cast_to_array(&ENCRYPTED[16..16 + 4])),
-            u32::from_be_bytes(cast_to_array(&encrypted[16..16 + 4]))
+            u32::from_be_bytes(ENCRYPTED[16..16 + 4].try_into().unwrap()),
+            u32::from_be_bytes(encrypted[16..16 + 4].try_into().unwrap())
         );
         assert_eq!(encrypted[21..], ENCRYPTED[21..]);
         assert_eq!(encrypted, &ENCRYPTED[..]);
@@ -82,7 +78,7 @@ mod rfc8188_example2 {
     const IKM: Lazy<[u8; 16]> = DECODE!("BO3ZVPxUlnLORbVGMpbT1Q");
     const KEYID: &[u8] = "a1".as_bytes();
 
-    const SALT: Lazy<[u8; 16]> = Lazy::new(|| cast_to_array(&ENCRYPTED[0..16]));
+    const SALT: Lazy<[u8; 16]> = Lazy::new(|| ENCRYPTED[0..16].try_into().unwrap());
     const ENCRYPTED: Lazy<[u8; 73]> = DECODE!("uNCkWiNYzKTnBN9ji3-qWAAAABkCYTHOG8chz_gnvgOqdGYovxyjuqRyJFjEDyoF1Fvkj6hQPdPHI51OEUKEpgz3SsLWIqS_uA");
 
     #[test]
@@ -99,8 +95,8 @@ mod rfc8188_example2 {
         assert_eq!(encrypted.len(), ENCRYPTED.len());
         assert_eq!(encrypted[..16], ENCRYPTED[..16]);
         assert_eq!(
-            u32::from_be_bytes(cast_to_array(&ENCRYPTED[16..16 + 4])),
-            u32::from_be_bytes(cast_to_array(&encrypted[16..16 + 4]))
+            u32::from_be_bytes(ENCRYPTED[16..16 + 4].try_into().unwrap()),
+            u32::from_be_bytes(encrypted[16..16 + 4].try_into().unwrap())
         );
         assert_eq!(encrypted[21..], ENCRYPTED[21..]);
         assert_eq!(encrypted, &ENCRYPTED[..]);
