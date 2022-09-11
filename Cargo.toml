@@ -1,0 +1,3 @@
+[workspace]
+members = ["ece", "web_push", "example"]
+resolver = "2"
