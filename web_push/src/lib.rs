@@ -20,28 +20,35 @@ pub type WebPushError = Box<dyn std::error::Error>;
 
 pub type Auth = GenericArray<u8, U16>;
 
-#[derive(Clone, Debug)]
 pub struct WebPushBuilder {
     uri: Uri,
+    valid_duration: Duration,
     ua_public: p256::PublicKey,
     ua_auth: Auth,
-    vapid_sign: VapidSignature,
+    vapid: Option<(ES256KeyPair, String)>,
 }
 
 impl WebPushBuilder {
-    pub fn new<'a>(
-        uri: Uri,
-        vapid_kp: ES256KeyPair,
-        ua_public: p256::PublicKey,
-        ua_auth: Auth,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let vapid_sign = vapid_sign(&uri, vapid_kp)?;
-        Ok(Self {
+    pub fn new<'a>(uri: Uri, ua_public: p256::PublicKey, ua_auth: Auth) -> Self {
+        Self {
             uri,
             ua_public,
             ua_auth,
-            vapid_sign,
-        })
+            valid_duration: Duration::from_hours(12),
+            vapid: None,
+        }
+    }
+
+    pub fn with_valid_duration(self, valid_duration: Duration) -> Self {
+        let mut this = self;
+        this.valid_duration = valid_duration;
+        this
+    }
+
+    pub fn with_vapid<T: ToString>(self, vapid_kp: ES256KeyPair, contact: T) -> Self {
+        let mut this = self;
+        this.vapid = Some((vapid_kp, contact.to_string()));
+        this
     }
 
     pub fn build<T: Into<Vec<u8>>>(
@@ -51,17 +58,20 @@ impl WebPushBuilder {
         let body = body.into();
 
         let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
-        let request = Request::builder()
+        let mut builder = Request::builder()
             .uri(self.uri.clone())
             .method(http::method::Method::POST)
-            .header(header::AUTHORIZATION, self.vapid_sign.clone())
-            .header("TTL", Duration::from_hours(12).as_secs())
+            .header("TTL", self.valid_duration.as_secs())
             .header(header::CONTENT_ENCODING, "aes128gcm")
             .header(header::CONTENT_TYPE, "application/octet-stream")
-            .header(header::CONTENT_LENGTH, payload.len())
-            .body(payload)?;
+            .header(header::CONTENT_LENGTH, payload.len());
 
-        Ok(request)
+        if let Some((ref vapid_kp, ref contact)) = self.vapid {
+            let vapid_sign = vapid_sign(&self.uri, self.valid_duration, contact, &vapid_kp)?;
+            builder = builder.header(header::AUTHORIZATION, vapid_sign);
+        }
+
+        Ok(builder.body(payload)?)
     }
 }
 
@@ -165,19 +175,22 @@ impl From<VapidSignature> for http::HeaderValue {
     }
 }
 
-fn vapid_sign(endpoint: &Uri, key: ES256KeyPair) -> Result<VapidSignature, jwt_simple::Error> {
-    let claims = Claims::create(Duration::from_hours(12))
+fn vapid_sign<T: ToString>(
+    endpoint: &Uri,
+    valid_duration: Duration,
+    contact: T,
+    key: &ES256KeyPair,
+) -> Result<VapidSignature, jwt_simple::Error> {
+    let claims = Claims::create(valid_duration)
         .with_audience(format!(
             "{}://{}",
             endpoint.scheme_str().unwrap(),
             endpoint.host().unwrap()
         ))
-        .with_subject("mailto:nobody@example.com");
+        .with_subject(contact);
 
-    let token = key.sign(claims)?;
-    let key = key.public_key();
     Ok(VapidSignature {
-        token,
-        public_key: key,
+        token: key.sign(claims)?,
+        public_key: key.public_key(),
     })
 }
