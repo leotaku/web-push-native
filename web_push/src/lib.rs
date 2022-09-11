@@ -132,7 +132,7 @@ pub fn decrypt(
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
     let ikm = compute_ikm(
-        ua_auth.as_slice().try_into().unwrap(),
+        &ua_auth,
         &shared,
         &as_secret.public_key(),
         &ua_public,
@@ -142,7 +142,7 @@ pub fn decrypt(
 }
 
 fn compute_ikm(
-    salt: [u8; 16],
+    auth: &Auth,
     shared: &p256::ecdh::SharedSecret,
     ua_public: &p256::PublicKey,
     as_public: &p256::PublicKey,
@@ -154,7 +154,7 @@ fn compute_ikm(
     info.extend_from_slice(as_public.as_affine().to_encoded_point(false).as_bytes());
 
     let mut okm = [0u8; 32];
-    let hk = Hkdf::<Sha256>::new(Some(&salt), shared.raw_secret_bytes().as_ref());
+    let hk = Hkdf::<Sha256>::new(Some(&auth), shared.raw_secret_bytes().as_ref());
     hk.expand(&info, &mut okm)
         .expect("okm length is always 32 bytes, cannot be too large");
 
