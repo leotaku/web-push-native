@@ -46,7 +46,7 @@ mod rfc8291_example {
         |it| Ok::<_, ()>(Auth::clone_from_slice(it)),
         "BTBZMqHH6r4Tts7J_aSIgg"
     );
-    const _UA_PRIVATE: Lazy<p256::SecretKey> = DECODE!(
+    const UA_PRIVATE: Lazy<p256::SecretKey> = DECODE!(
         p256::SecretKey::from_be_bytes,
         "q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94"
     );
@@ -83,5 +83,15 @@ mod rfc8291_example {
             encrypt_predictably(*SALT, PLAINTEXT.to_vec(), &AS_PRIVATE, &UA_PUBLIC, &AUTH).unwrap();
 
         assert_eq!(&ciphertext[21..], &CIPHERTEXT[21..]);
+    }
+
+    #[test]
+    fn test_encrypt_decrypt() {
+        let ciphertext =
+            encrypt_predictably(*SALT, PLAINTEXT.to_vec(), &AS_PRIVATE, &UA_PUBLIC, &AUTH).unwrap();
+
+        let plaintext = decrypt(ciphertext, &UA_PRIVATE, &AUTH).unwrap();
+
+        assert_eq!(plaintext, PLAINTEXT);
     }
 }
