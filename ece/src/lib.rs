@@ -1,4 +1,5 @@
-//! This crate implements ECE encryption according to rfc8188.
+//! This crate implements Encrypted Content-Encoding (ECE) encryption
+//! and decryption according to [RFC8188](https://www.rfc-editor.org/rfc/rfc8188).
 
 #[cfg(test)]
 mod tests;
@@ -10,7 +11,7 @@ use aes_gcm::{
 use hkdf::Hkdf;
 use sha2::Sha256;
 
-/// Error modes for rfc8188 encryption and decryption
+/// Error modes for RFC8188 encryption and decryption
 #[derive(Debug)]
 pub enum Error {
     /// Header of the encrypted payload was too short
@@ -114,7 +115,7 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
     Ok(record)
 }
 
-/// Low-level rfc8188 ece encryption routine
+/// Low-level RFC8188 ece encryption routine
 pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
     ikm: IKM,
     salt: [u8; 16],
@@ -173,7 +174,7 @@ fn decrypt_record<'a>(
     }
 }
 
-/// Low-level rfc8188 ece decryption routine
+/// Low-level RFC8188 ece decryption routine
 pub fn decrypt<IKM: AsRef<[u8]>>(
     ikm: IKM,
     mut encrypted_message: Vec<u8>,
