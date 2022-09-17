@@ -1,7 +1,14 @@
 [package]
-name = "ece-native"
-version = "0.1.0-pre"
+authors = ["Leo Gaskin <leo.gaskin@le0.gs>"]
+categories = ["cryptography", "network-programming", "web-programming"]
+description = "Encrypted Content-Encoding (ECE) encryption and decryption implemented according to rfc8188"
 edition = "2021"
+homepage = "https://github.com/leotaku/tower-livereload"
+keywords = ["http-ece", "web-push", "ece", "rust-crypto"]
+license = "MIT OR Apache-2.0"
+name = "ece-native"
+repository = "https://github.com/leotaku/web-push-native"
+version = "0.1.0-pre"
 
 [dependencies]
 aes-gcm = "0.10.1"
