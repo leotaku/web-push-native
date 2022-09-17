@@ -192,6 +192,7 @@ pub fn decrypt<IKM: AsRef<[u8]>>(
     }
 
     let (_, records) = keyid_and_records.split_at_mut(idlen);
+    let all_records_len = records.len();
     let records = records
         .chunks_mut(
             encrypted_record_size
@@ -207,7 +208,7 @@ pub fn decrypt<IKM: AsRef<[u8]>>(
             (key, nonce, record)
         });
 
-    let mut output = Vec::new();
+    let mut output = Vec::with_capacity(all_records_len);
 
     let mut peekable = records.peekable();
     while let Some((key, nonce, record)) = peekable.next() {
