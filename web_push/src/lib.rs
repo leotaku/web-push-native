@@ -79,19 +79,19 @@ impl WebPushBuilder {
 }
 
 pub fn encrypt(
-    plaintext: Vec<u8>,
+    message: Vec<u8>,
     ua_public: &p256::PublicKey,
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, ece_native::Error> {
     let mut salt = [0u8; 16];
     OsRng.fill_bytes(&mut salt);
     let as_secret = p256::SecretKey::random(&mut OsRng);
-    encrypt_predictably(salt, plaintext, &as_secret, ua_public, ua_auth)
+    encrypt_predictably(salt, message, &as_secret, ua_public, ua_auth)
 }
 
 fn encrypt_predictably(
     salt: [u8; 16],
-    plaintext: Vec<u8>,
+    message: Vec<u8>,
     as_secret: &p256::SecretKey,
     ua_public: &p256::PublicKey,
     ua_auth: &Auth,
@@ -106,7 +106,7 @@ fn encrypt_predictably(
         &as_public,
     );
     let keyid = as_public.as_affine().to_encoded_point(false);
-    let encrypted_record_length = (plaintext.len() + 17)
+    let encrypted_record_length = (message.len() + 17)
         .try_into()
         .map_err(|_| ece_native::Error::RecordLengthInvalid)?;
 
@@ -114,31 +114,26 @@ fn encrypt_predictably(
         ikm,
         salt,
         keyid,
-        Some(plaintext).into_iter(),
+        Some(message).into_iter(),
         encrypted_record_length,
     )
 }
 
 pub fn decrypt(
-    ciphertext: Vec<u8>,
+    encrypted_message: Vec<u8>,
     as_secret: &p256::SecretKey,
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, ece_native::Error> {
-    let idlen = ciphertext[20];
-    let keyid = &ciphertext[21..21 + (idlen as usize)];
+    let idlen = encrypted_message[20];
+    let keyid = &encrypted_message[21..21 + (idlen as usize)];
 
     let ua_public =
         p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::AesGcm)?;
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
-    let ikm = compute_ikm(
-        &ua_auth,
-        &shared,
-        &as_secret.public_key(),
-        &ua_public,
-    );
+    let ikm = compute_ikm(&ua_auth, &shared, &as_secret.public_key(), &ua_public);
 
-    ece_native::decrypt(ikm, ciphertext)
+    ece_native::decrypt(ikm, encrypted_message)
 }
 
 fn compute_ikm(

@@ -164,12 +164,15 @@ fn decrypt_record<'a>(
     }
 }
 
-pub fn decrypt<IKM: AsRef<[u8]>>(ikm: IKM, mut payload: Vec<u8>) -> Result<Vec<u8>, Error> {
-    if payload.len() < 21 {
+pub fn decrypt<IKM: AsRef<[u8]>>(
+    ikm: IKM,
+    mut encrypted_message: Vec<u8>,
+) -> Result<Vec<u8>, Error> {
+    if encrypted_message.len() < 21 {
         return Err(Error::HeaderLengthInvalid);
     }
 
-    let (header, keyid_and_records) = payload.split_at_mut(21);
+    let (header, keyid_and_records) = encrypted_message.split_at_mut(21);
     let salt = header[..16].try_into().unwrap();
     let encrypted_record_size = u32::from_be_bytes(header[16..16 + 4].try_into().unwrap());
     let idlen = header[20] as usize;
