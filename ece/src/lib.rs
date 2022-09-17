@@ -14,7 +14,7 @@ pub enum Error {
     KeyIdLengthInvalid,
     RecordLengthInvalid,
     PaddingInvalid,
-    AesGcm,
+    Aes128Gcm,
 }
 
 impl std::error::Error for Error {}
@@ -88,20 +88,20 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
     if is_last {
         record
             .extend_from_slice(b"\x02")
-            .map_err(|_| Error::AesGcm)?;
+            .map_err(|_| Error::Aes128Gcm)?;
     } else {
         let pad_len = encrypted_record_size - plain_record_size - 16;
         record
             .extend_from_slice(b"\x01")
-            .map_err(|_| Error::AesGcm)?;
+            .map_err(|_| Error::Aes128Gcm)?;
         record
             .extend_from_slice(&b"\x00".repeat((pad_len - 1).try_into().unwrap())[..])
-            .map_err(|_| Error::AesGcm)?;
+            .map_err(|_| Error::Aes128Gcm)?;
     }
 
     Aes128Gcm::new(key)
         .encrypt_in_place(nonce, b"", &mut record)
-        .map_err(|_| Error::AesGcm)?;
+        .map_err(|_| Error::Aes128Gcm)?;
 
     Ok(record)
 }
@@ -150,7 +150,7 @@ fn decrypt_record<'a>(
 
     Aes128Gcm::new(&key)
         .decrypt_in_place_detached(&nonce, b"", msg, Tag::<Aes128Gcm>::from_slice(tag))
-        .map_err(|_| Error::AesGcm)?;
+        .map_err(|_| Error::Aes128Gcm)?;
 
     let pad_index = msg
         .as_ref()

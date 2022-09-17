@@ -128,7 +128,7 @@ pub fn decrypt(
     let keyid = &encrypted_message[21..21 + (idlen as usize)];
 
     let ua_public =
-        p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::AesGcm)?;
+        p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::Aes128Gcm)?;
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
     let ikm = compute_ikm(&ua_auth, &shared, &as_secret.public_key(), &ua_public);
