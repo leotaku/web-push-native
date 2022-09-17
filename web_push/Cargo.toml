@@ -1,12 +1,12 @@
 [package]
 name = "web-push-native"
-version = "0.1.0"
+version = "0.1.0-pre"
 edition = "2021"
 
 [dependencies]
 aes-gcm = "0.10.1"
 base64 = "0.13.0"
-ece-native = { path = "../ece" }
+ece-native = { version = "0.1.0-pre", path = "../ece" }
 hkdf = "0.12.3"
 http = "0.2.8"
 jwt-simple = { git = "https://github.com/jedisct1/rust-jwt-simple.git" }
