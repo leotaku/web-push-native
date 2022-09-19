@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 name = "ece-native"
 readme = "README.md"
 repository = "https://github.com/leotaku/web-push-native"
-version = "0.1.0-pre"
+version = "0.1.0-pre2"
 
 [dependencies]
 aes-gcm = "0.10.1"
