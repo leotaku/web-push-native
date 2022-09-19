@@ -1,7 +1,7 @@
 [package]
 authors = ["Leo Gaskin <leo.gaskin@le0.gs>"]
 categories = ["cryptography", "network-programming", "web-programming"]
-description = "Encrypted Content-Encoding (ECE) encryption and decryption implemented according to rfc8188"
+description = "Encrypted Content-Encoding (ECE) encryption and decryption implemented according to RFC8188"
 edition = "2021"
 homepage = "https://github.com/leotaku/tower-livereload"
 keywords = ["http-ece", "web-push", "ece", "rust-crypto"]
