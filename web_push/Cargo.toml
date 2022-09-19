@@ -1,6 +1,7 @@
 [package]
 edition = "2021"
 name = "web-push-native"
+readme = "README.md"
 version = "0.1.0-pre"
 
 [dependencies]
