@@ -1,7 +1,14 @@
 [package]
+authors = ["Leo Gaskin <leo.gaskin@le0.gs>"]
+categories = ["cryptography", "network-programming", "web-programming"]
+description = "Generic Event Delivery Using Http Push (web-push) components implemented according to RFC8030"
 edition = "2021"
+homepage = "https://github.com/leotaku/web-push-native"
+keywords = ["webpush", "web-push", "http-push", "rust-crypto"]
+license = "MIT OR Apache-2.0"
 name = "web-push-native"
 readme = "README.md"
+repository = "https://github.com/leotaku/web-push-native"
 version = "0.1.0-pre"
 
 [dependencies]
