@@ -19,7 +19,7 @@ use jwt_simple::{
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 
-pub type WebPushError = Box<dyn std::error::Error>;
+pub type Error = Box<dyn std::error::Error>;
 
 pub type Auth = GenericArray<u8, U16>;
 
@@ -57,7 +57,7 @@ impl WebPushBuilder {
     pub fn build<T: Into<Vec<u8>>>(
         &self,
         body: T,
-    ) -> Result<http::request::Request<Vec<u8>>, WebPushError> {
+    ) -> Result<http::request::Request<Vec<u8>>, Error> {
         let body = body.into();
 
         let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
