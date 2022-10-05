@@ -69,8 +69,9 @@ impl WebPushBuilder {
             .header(header::CONTENT_TYPE, "application/octet-stream")
             .header(header::CONTENT_LENGTH, payload.len());
 
-        if let Some((ref vapid_kp, ref contact)) = self.vapid {
-            let vapid_sign = vapid_sign(&self.uri, self.valid_duration, contact, &vapid_kp)?;
+        if let Some((vapid_kp, contact)) = &self.vapid {
+            let vapid_sign =
+                VapidSignature::sign(&self.uri, self.valid_duration, contact, vapid_kp)?;
             builder = builder.header(header::AUTHORIZATION, vapid_sign);
         }
 
@@ -162,6 +163,28 @@ struct VapidSignature {
     public_key: ES256PublicKey,
 }
 
+impl VapidSignature {
+    fn sign<T: ToString>(
+        endpoint: &Uri,
+        valid_duration: Duration,
+        contact: T,
+        key: &ES256KeyPair,
+    ) -> Result<VapidSignature, jwt_simple::Error> {
+        let claims = Claims::create(valid_duration)
+            .with_audience(format!(
+                "{}://{}",
+                endpoint.scheme_str().unwrap(),
+                endpoint.host().unwrap()
+            ))
+            .with_subject(contact);
+
+        Ok(VapidSignature {
+            token: key.sign(claims)?,
+            public_key: key.public_key(),
+        })
+    }
+}
+
 impl From<VapidSignature> for http::HeaderValue {
     fn from(signature: VapidSignature) -> Self {
         let encoded_public = base64::encode_config(
@@ -171,24 +194,4 @@ impl From<VapidSignature> for http::HeaderValue {
         let value = format!("vapid t={}, k={}", signature.token, encoded_public);
         Self::try_from(value).unwrap()
     }
-}
-
-fn vapid_sign<T: ToString>(
-    endpoint: &Uri,
-    valid_duration: Duration,
-    contact: T,
-    key: &ES256KeyPair,
-) -> Result<VapidSignature, jwt_simple::Error> {
-    let claims = Claims::create(valid_duration)
-        .with_audience(format!(
-            "{}://{}",
-            endpoint.scheme_str().unwrap(),
-            endpoint.host().unwrap()
-        ))
-        .with_subject(contact);
-
-    Ok(VapidSignature {
-        token: key.sign(claims)?,
-        public_key: key.public_key(),
-    })
 }
