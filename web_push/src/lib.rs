@@ -1,3 +1,56 @@
+//! This crate implements "Generic Event Delivery Using Http Push" (web-push)
+//! according to [RFC8030](https://www.rfc-editor.org/rfc/rfc8030).
+//!
+//! # Example
+//!
+//! This example shows how to use the [`WebPushBuilder`] to create a HTTP push
+//! request to one, hard-coded client.
+//!
+//! In most cases, you will need to implement some form of state management to
+//! send messages to all of your clients. You are expected to create one
+//! [`WebPushBuilder`] for each client you want to send messages to, but can
+//! reuse the same builder for multiple push requests to the same client.
+//!
+//! ```
+//! use hyper::{Body, Client};
+//! use hyper_rustls::HttpsConnectorBuilder;
+//! use web_push_native::{
+//!     jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, WebPushBuilder,
+//! };
+//!
+//! // Placeholders for variables provided by individual clients. In most cases,
+//! // these will be retrieved in-browser using `pushManager.subscribe` on a service
+//! // worker registration object.
+//! const ENDPOINT: &str = "";
+//! const P256DH: &str = "";
+//! const AUTH: &str = "";
+//!
+//! // Placeholder for your private VAPID key. Keep this private and out of your
+//! // source tree in real projects!
+//! const VAPID: &str = "";
+//!
+//! async fn push(content: Body) -> Result<http::Request<Body>, Error> {
+//!     let https = HttpsConnectorBuilder::new()
+//!         .with_native_roots()
+//!         .https_only()
+//!         .enable_http1()
+//!         .build();
+//!     let client: Client<_, Body> = Client::builder().build(https);
+//!
+//!     let builder = WebPushBuilder::new(
+//!         ENDPOINT.parse()?,
+//!         PublicKey::from_sec1_bytes(&base64::decode_config(P256DH, base64::URL_SAFE)?)?,
+//!         Auth::clone_from_slice(&base64::decode_config(AUTH, base64::URL_SAFE)?),
+//!     )
+//!     .with_vapid(
+//!         ES256KeyPair::from_bytes(&base64::decode_config(VAPID, base64::URL_SAFE)?)?,
+//!         "mailto:example@example.com",
+//!     );
+//!
+//!     builder.build(content).map(|body| body.into())
+//! }
+//! ```
+
 #[cfg(test)]
 mod tests;
 
@@ -19,10 +72,13 @@ use jwt_simple::{
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 
+/// Opaque error type for web-push failure modes
 pub type Error = Box<dyn std::error::Error>;
 
+/// Web-push authentication secret
 pub type Auth = GenericArray<u8, U16>;
 
+/// Reusable builder for web-push HTTP requests
 pub struct WebPushBuilder {
     uri: Uri,
     valid_duration: Duration,
@@ -32,6 +88,15 @@ pub struct WebPushBuilder {
 }
 
 impl WebPushBuilder {
+    /// Creates a new [`WebPushBuilder`] factory for web-push HTTP
+    /// requests.
+    ///
+    /// Requests generated using this factory will have a valid  duration of 12
+    /// hours and no VAPID signature.
+    ///
+    /// Most providers accepting web-push requests will require a valid VAPID
+    /// signature, so you will most likely want to add one using
+    /// [`WebPushBuilder::with_vapid`].
     pub fn new<'a>(uri: Uri, ua_public: p256::PublicKey, ua_auth: Auth) -> Self {
         Self {
             uri,
@@ -42,18 +107,22 @@ impl WebPushBuilder {
         }
     }
 
+    /// Sets the valid duration for generated web-push HTTP requests.
     pub fn with_valid_duration(self, valid_duration: Duration) -> Self {
         let mut this = self;
         this.valid_duration = valid_duration;
         this
     }
 
+    /// Sets the VAPID signature header for generated web-push HTTP requests.
     pub fn with_vapid<T: ToString>(self, vapid_kp: ES256KeyPair, contact: T) -> Self {
         let mut this = self;
         this.vapid = Some((vapid_kp, contact.to_string()));
         this
     }
 
+    /// Generates a new web-push HTTP request according to the
+    /// specifications of the builder.
     pub fn build<T: Into<Vec<u8>>>(
         &self,
         body: T,
@@ -79,6 +148,7 @@ impl WebPushBuilder {
     }
 }
 
+/// Lower-level encryption used for web-push HTTP request content
 pub fn encrypt(
     message: Vec<u8>,
     ua_public: &p256::PublicKey,
@@ -120,6 +190,7 @@ fn encrypt_predictably(
     )
 }
 
+/// Lower-level decryption used for web-push HTTP request content
 pub fn decrypt(
     encrypted_message: Vec<u8>,
     as_secret: &p256::SecretKey,
@@ -164,6 +235,8 @@ struct VapidSignature {
 }
 
 impl VapidSignature {
+    /// Creates and signs a new [`VapidSignature`] which can be used
+    /// as a HTTP header value.
     fn sign<T: ToString>(
         endpoint: &Uri,
         valid_duration: Duration,
