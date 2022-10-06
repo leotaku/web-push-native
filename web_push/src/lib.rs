@@ -72,13 +72,13 @@ use jwt_simple::{
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 
-/// Opaque error type for web-push failure modes
+/// Opaque error type for HTTP push failure modes
 pub type Error = Box<dyn std::error::Error>;
 
-/// Web-push authentication secret
+/// HTTP push authentication secret
 pub type Auth = GenericArray<u8, U16>;
 
-/// Reusable builder for web-push HTTP requests
+/// Reusable builder for HTTP push requests
 pub struct WebPushBuilder {
     uri: Uri,
     valid_duration: Duration,
@@ -88,13 +88,12 @@ pub struct WebPushBuilder {
 }
 
 impl WebPushBuilder {
-    /// Creates a new [`WebPushBuilder`] factory for web-push HTTP
-    /// requests.
+    /// Creates a new [`WebPushBuilder`] factory for HTTP push requests.
     ///
     /// Requests generated using this factory will have a valid  duration of 12
     /// hours and no VAPID signature.
     ///
-    /// Most providers accepting web-push requests will require a valid VAPID
+    /// Most providers accepting HTTP push requests will require a valid VAPID
     /// signature, so you will most likely want to add one using
     /// [`WebPushBuilder::with_vapid`].
     pub fn new<'a>(uri: Uri, ua_public: p256::PublicKey, ua_auth: Auth) -> Self {
@@ -107,21 +106,21 @@ impl WebPushBuilder {
         }
     }
 
-    /// Sets the valid duration for generated web-push HTTP requests.
+    /// Sets the valid duration for generated HTTP push requests.
     pub fn with_valid_duration(self, valid_duration: Duration) -> Self {
         let mut this = self;
         this.valid_duration = valid_duration;
         this
     }
 
-    /// Sets the VAPID signature header for generated web-push HTTP requests.
+    /// Sets the VAPID signature header for generated HTTP push requests.
     pub fn with_vapid<T: ToString>(self, vapid_kp: ES256KeyPair, contact: T) -> Self {
         let mut this = self;
         this.vapid = Some((vapid_kp, contact.to_string()));
         this
     }
 
-    /// Generates a new web-push HTTP request according to the
+    /// Generates a new HTTP push request according to the
     /// specifications of the builder.
     pub fn build<T: Into<Vec<u8>>>(
         &self,
@@ -148,7 +147,7 @@ impl WebPushBuilder {
     }
 }
 
-/// Lower-level encryption used for web-push HTTP request content
+/// Lower-level encryption used for HTTP push request content
 pub fn encrypt(
     message: Vec<u8>,
     ua_public: &p256::PublicKey,
@@ -190,7 +189,7 @@ fn encrypt_predictably(
     )
 }
 
-/// Lower-level decryption used for web-push HTTP request content
+/// Lower-level decryption used for HTTP push request content
 pub fn decrypt(
     encrypted_message: Vec<u8>,
     as_secret: &p256::SecretKey,
