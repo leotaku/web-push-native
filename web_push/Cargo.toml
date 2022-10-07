@@ -11,6 +11,9 @@ readme = "README.md"
 repository = "https://github.com/leotaku/web-push-native"
 version = "0.1.0-pre"
 
+[lib]
+doctest = false
+
 [dependencies]
 aes-gcm = "0.10.1"
 base64 = "0.13.0"
