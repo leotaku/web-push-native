@@ -15,7 +15,7 @@
 //! use hyper::{Body, Client};
 //! use hyper_rustls::HttpsConnectorBuilder;
 //! use web_push_native::{
-//!     jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, WebPushBuilder,
+//!     jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, Error, WebPushBuilder,
 //! };
 //!
 //! // Placeholders for variables provided by individual clients. In most cases,
