@@ -16,13 +16,13 @@ doctest = false
 
 [dependencies]
 aes-gcm = "0.10.1"
-base64 = "0.13.0"
+base64 = "0.13.1"
 ece-native = { version = "0.1.0-pre3", path = "../ece" }
 hkdf = "0.12.3"
 http = "0.2.8"
-jwt-simple = { version = "0.11.1" }
+jwt-simple = "0.11.1"
 p256 = { version = "0.11.1", features = ["ecdh"] }
-sha2 = "0.10.2"
+sha2 = "0.10.6"
 
 [dev-dependencies]
-once_cell = "1.14.0"
+once_cell = "1.15.0"
