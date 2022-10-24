@@ -1,23 +1,30 @@
-mod utilities;
-
 use axum::{
     extract,
+    http::HeaderValue,
     response::Html,
     routing::{get, post},
-    Router, Server,
+    Json, Router, Server,
 };
-use hyper::{Body, Client, StatusCode};
+use hyper::{header, Body, Client, StatusCode};
 use hyper_rustls::HttpsConnectorBuilder;
+use once_cell::sync::Lazy;
 use std::sync::{Arc, RwLock};
 use tower_http::add_extension::AddExtensionLayer;
 use tower_livereload::LiveReloadLayer;
-use utilities::{JavaScript, Json};
-use web_push_native::{jwt_simple::algorithms::ES256KeyPair, WebPushBuilder};
+use web_push_native::{
+    jwt_simple::algorithms::{ECDSAP256KeyPairLike, ES256KeyPair},
+    WebPushBuilder,
+};
 
-// VAPID private and public keys
-const ES256_PRIVATE: &str = "RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw";
-const ES256_PUBLIC: &str =
-    "BAFpiPJBZOqNZcJGy0eiB1CIwMflt7ugC2B083zKPFu9djmajpSnVnUAFnlDNkzaKHf2gla5_FuDhXE-zIkx5MI";
+/// VAPID key pair (keep private for real applications)
+const VAPID_PRIVATE: Lazy<ES256KeyPair> = Lazy::new(|| {
+    let bytes = base64::decode_config(
+        b"RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw",
+        base64::URL_SAFE,
+    )
+    .expect("this to be valid base64");
+    ES256KeyPair::from_bytes(&bytes).expect("this to be a valid private key")
+});
 
 async fn push(message: String, builder: WebPushBuilder) -> Result<(), Box<dyn std::error::Error>> {
     let https = HttpsConnectorBuilder::new()
@@ -27,9 +34,8 @@ async fn push(message: String, builder: WebPushBuilder) -> Result<(), Box<dyn st
         .build();
     let client: Client<_, Body> = Client::builder().build(https);
 
-    let key_bytes = &base64::decode_config(ES256_PRIVATE, base64::URL_SAFE)?;
     let request = builder
-        .with_vapid(ES256KeyPair::from_bytes(key_bytes)?, "")
+        .with_vapid(&VAPID_PRIVATE, "mailto:john.doe@example.com")
         .build(format!(r#"{{"title": "{}", "body": ""}}"#, message))?
         .map(|body| body.into());
 
@@ -62,10 +68,20 @@ fn api_routes() -> Router {
     Router::new()
         .route(
             "/vapid.json",
-            get(|| async { Json(format!(r#"{{ "publicKey": "{}" }}"#, ES256_PUBLIC)) }),
+            get(|| async {
+                let encoded = base64::encode(
+                    &VAPID_PRIVATE
+                        .key_pair()
+                        .public_key()
+                        .to_bytes_uncompressed(),
+                );
+                Json(serde_json::json!({
+                    "publicKey": encoded,
+                }))
+            }),
         )
         .route(
-            "/put",
+            "/register",
             post(
                 |extract::Json(builder): extract::Json<WebPushBuilder>,
                  extract::Extension(state): axum::Extension<SharedState>| {
@@ -109,10 +125,26 @@ fn static_routes() -> Router {
         )
         .route(
             "/index.js",
-            get(|| async { JavaScript(include_str!("../assets/index.js")) }),
+            get(|| async {
+                (
+                    [(
+                        header::CONTENT_TYPE,
+                        HeaderValue::from_static("application/javascript"),
+                    )],
+                    include_str!("../assets/index.js"),
+                )
+            }),
         )
         .route(
             "/sw.js",
-            get(|| async { JavaScript(include_str!("../assets/sw.js")) }),
+            get(|| async {
+                (
+                    [(
+                        header::CONTENT_TYPE,
+                        HeaderValue::from_static("application/javascript"),
+                    )],
+                    include_str!("../assets/sw.js"),
+                )
+            }),
         )
 }

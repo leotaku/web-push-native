@@ -54,7 +54,7 @@ async function main() {
   }
 
   try {
-    await fetch("/api/put", {
+    await fetch("/api/register", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
