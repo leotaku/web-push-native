@@ -57,6 +57,7 @@
 
 #[cfg(test)]
 mod tests;
+mod vapid;
 
 pub use jwt_simple;
 pub use p256;
@@ -68,11 +69,7 @@ use aes_gcm::aead::{
 };
 use hkdf::Hkdf;
 use http::{self, header, Request, Uri};
-use jwt_simple::{
-    algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256KeyPair, ES256PublicKey},
-    claims::Claims,
-    prelude::Duration,
-};
+use jwt_simple::{algorithms::ES256KeyPair, prelude::Duration};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 
@@ -123,17 +120,31 @@ impl WebPushBuilder {
         self,
         vapid_kp: ES256KeyPair,
         contact: S,
-    ) -> WebPushBuilder<VapidAuthorization> {
+    ) -> WebPushBuilder<vapid::VapidAuthorization> {
         WebPushBuilder {
             uri: self.uri,
             valid_duration: self.valid_duration,
             ua_public: self.ua_public,
             ua_auth: self.ua_auth,
-            http_auth: VapidAuthorization {
-                vapid_kp,
-                contact: contact.to_string(),
-            },
+            http_auth: vapid::VapidAuthorization::new(vapid_kp, contact),
         }
+    }
+}
+
+#[doc(hidden)]
+pub trait AddHeaders: Sized {
+    fn add_headers(
+        this: &WebPushBuilder<Self>,
+        builder: http::request::Builder,
+    ) -> Result<http::request::Builder, Error>;
+}
+
+impl AddHeaders for () {
+    fn add_headers(
+        _this: &WebPushBuilder<()>,
+        builder: http::request::Builder,
+    ) -> Result<http::request::Builder, Error> {
+        Ok(builder)
     }
 }
 
@@ -236,83 +247,4 @@ fn compute_ikm(
         .expect("okm length is always 32 bytes, cannot be too large");
 
     okm
-}
-
-#[doc(hidden)]
-pub trait AddHeaders: Sized {
-    fn add_headers(
-        this: &WebPushBuilder<Self>,
-        builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error>;
-}
-
-impl AddHeaders for () {
-    fn add_headers(
-        _this: &WebPushBuilder<()>,
-        builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error> {
-        Ok(builder)
-    }
-}
-
-#[doc(hidden)]
-pub struct VapidAuthorization {
-    vapid_kp: ES256KeyPair,
-    contact: String,
-}
-
-impl AddHeaders for VapidAuthorization {
-    fn add_headers(
-        this: &WebPushBuilder<VapidAuthorization>,
-        builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error> {
-        let vapid = VapidSignature::sign(
-            &this.uri,
-            this.valid_duration,
-            this.http_auth.contact.to_string(),
-            &this.http_auth.vapid_kp,
-        )?;
-        Ok(builder.header(header::AUTHORIZATION, vapid))
-    }
-}
-
-#[derive(Clone, Debug)]
-struct VapidSignature {
-    token: String,
-    public_key: ES256PublicKey,
-}
-
-impl VapidSignature {
-    /// Creates and signs a new [`VapidSignature`] which can be used
-    /// as a HTTP header value.
-    fn sign<T: ToString>(
-        endpoint: &Uri,
-        valid_duration: Duration,
-        contact: T,
-        key: &ES256KeyPair,
-    ) -> Result<VapidSignature, jwt_simple::Error> {
-        let claims = Claims::create(valid_duration)
-            .with_audience(format!(
-                "{}://{}",
-                endpoint.scheme_str().unwrap(),
-                endpoint.host().unwrap()
-            ))
-            .with_subject(contact);
-
-        Ok(VapidSignature {
-            token: key.sign(claims)?,
-            public_key: key.public_key(),
-        })
-    }
-}
-
-impl From<VapidSignature> for http::HeaderValue {
-    fn from(signature: VapidSignature) -> Self {
-        let encoded_public = base64::encode_config(
-            signature.public_key.public_key().to_bytes_uncompressed(),
-            base64::URL_SAFE_NO_PAD,
-        );
-        let value = format!("vapid t={}, k={}", signature.token, encoded_public);
-        Self::try_from(value).unwrap()
-    }
 }
