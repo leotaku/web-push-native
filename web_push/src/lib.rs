@@ -237,14 +237,14 @@ fn compute_ikm(
 #[doc(hidden)]
 pub trait AddHeaders: Sized {
     fn add_headers(
-        web: &WebPushBuilder<Self>,
+        this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error>;
 }
 
 impl AddHeaders for () {
     fn add_headers(
-        _web: &WebPushBuilder<()>,
+        _this: &WebPushBuilder<()>,
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error> {
         Ok(builder)
@@ -259,14 +259,14 @@ pub struct VapidAuthorization {
 
 impl AddHeaders for VapidAuthorization {
     fn add_headers(
-        web: &WebPushBuilder<VapidAuthorization>,
+        this: &WebPushBuilder<VapidAuthorization>,
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error> {
         let vapid = VapidSignature::sign(
-            &web.uri,
-            web.valid_duration,
-            web.http_auth.contact.to_string(),
-            &web.http_auth.vapid_kp,
+            &this.uri,
+            this.valid_duration,
+            this.http_auth.contact.to_string(),
+            &this.http_auth.vapid_kp,
         )?;
         Ok(builder.header(header::AUTHORIZATION, vapid))
     }
