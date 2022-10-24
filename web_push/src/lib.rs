@@ -80,7 +80,7 @@ pub type Auth = GenericArray<u8, U16>;
 
 /// Reusable builder for HTTP push requests
 #[derive(Clone, Debug)]
-pub struct WebPushBuilder<A = Nothing> {
+pub struct WebPushBuilder<A = ()> {
     uri: Uri,
     valid_duration: Duration,
     ua_public: p256::PublicKey,
@@ -103,7 +103,7 @@ impl WebPushBuilder {
             ua_public,
             ua_auth,
             valid_duration: Duration::from_hours(12),
-            http_auth: Nothing,
+            http_auth: (),
         }
     }
 
@@ -242,13 +242,9 @@ pub trait AddHeaders: Sized {
     ) -> Result<http::request::Builder, Error>;
 }
 
-#[derive(Clone, Copy, Debug)]
-#[doc(hidden)]
-pub struct Nothing;
-
-impl AddHeaders for Nothing {
+impl AddHeaders for () {
     fn add_headers(
-        _web: &WebPushBuilder<Nothing>,
+        _web: &WebPushBuilder<()>,
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error> {
         Ok(builder)
