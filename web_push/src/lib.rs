@@ -136,10 +136,7 @@ impl WebPushBuilder {
 impl<A: AddHeaders> WebPushBuilder<A> {
     /// Generates a new HTTP push request according to the
     /// specifications of the builder.
-    pub fn build<T: Into<Vec<u8>>>(
-        &self,
-        body: T,
-    ) -> Result<http::request::Request<Vec<u8>>, Error> {
+    pub fn build<T: Into<Vec<u8>>>(&self, body: T) -> Result<Request<Vec<u8>>, Error> {
         let body = body.into();
 
         let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
