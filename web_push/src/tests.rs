@@ -17,7 +17,7 @@ macro_rules! DECODE {
 
 #[test]
 fn test_encrypt_decrypt() {
-    let vapid_pair = ES256KeyPair::generate();
+    let vapid_pair = jwt_simple::algorithms::ES256KeyPair::generate();
     let ece_secret = p256::SecretKey::random(&mut OsRng);
     let mut auth = vec![0u8; 16];
     OsRng.fill_bytes(&mut auth);
@@ -28,7 +28,7 @@ fn test_encrypt_decrypt() {
         ece_secret.public_key(),
         auth,
     )
-    .with_vapid(vapid_pair, "mailto:nobody@example.com");
+    .with_vapid(&vapid_pair, "mailto:nobody@example.com");
 
     let plaintext = b"I am the walrus".to_vec();
     let ciphertext = builder.build(plaintext.clone()).unwrap().into_body();
