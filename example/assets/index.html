@@ -7,8 +7,15 @@
     <title></title>
   </head>
   <body>
-    <button id="subscribe">Start Receiving Notifications!</button>
-    <div id="state"></div>
+    <section>
+      <b>Variables:</b>
+      <pre id="details">{}</pre>
+      <pre id="state">no errors :)</pre>
+    </section>
+    <section>
+      <b>Use something like the following command to send a notification:</b>
+      <pre>curl http://localhost:3030/api/message --json '"Hello World!"'</pre>
+    </section>
     <script type="module" src="/index.js"></script>
   </body>
 </html>

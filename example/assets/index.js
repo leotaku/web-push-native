@@ -15,7 +15,7 @@ function urlBase64ToUint8Array(base64String) {
 /** @typedef {Promise<{ "public": string }>} VapidKeys */
 /** @returns {VapidKeys} */
 async function fetchVapidKeys() {
-  return fetch("vapid.json").then((resp) => resp.json())
+  return fetch("/api/vapid.json").then((resp) => resp.json());
 }
 
 /** @param {VapidKeys} vapidKeys */
@@ -26,7 +26,8 @@ async function subscribeUserToPush(vapidKeys) {
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(vapidKeys.publicKey),
   });
-  console.log("Received PushSubscription: ", JSON.stringify(pushSubscription));
+  console.log("Received PushSubscription: ", pushSubscription);
+
   return pushSubscription;
 }
 
@@ -38,20 +39,33 @@ async function askPermission() {
 }
 
 async function main() {
-  /** @type {HTMLButtonElement} */
-  let button = document.getElementById("subscribe");
+  let details = document.getElementById("details");
   let state = document.getElementById("state");
-  button.onclick = async () => {
-    try {
-      let keys = await fetchVapidKeys();
-      await askPermission();
-      await subscribeUserToPush(keys);
-      button.disabled = true;
-    } catch (error) {
-      if (error instanceof Error) {
-        state.innerText = error.message;
-      }
+
+  try {
+    let keys = await fetchVapidKeys();
+    await askPermission();
+    state.subscription = await subscribeUserToPush(keys);
+    details.textContent = JSON.stringify(state.subscription, null, 4);
+  } catch (error) {
+    if (error instanceof Error) {
+      state.innerText = error.message;
     }
-  };
+  }
+
+  try {
+    await fetch("/api/put", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(state.subscription),
+    });
+  } catch (error) {
+    if (error instanceof Error) {
+      state.innerText = error.message;
+    }
+  }
 }
+
 main();
