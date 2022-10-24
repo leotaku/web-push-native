@@ -55,6 +55,8 @@
 //! }
 //! ```
 
+#[cfg(feature = "serde")]
+mod serde_;
 #[cfg(test)]
 mod tests;
 mod vapid;
