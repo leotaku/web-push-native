@@ -9,7 +9,11 @@
 //! In most cases, you will need to implement some form of state management to
 //! send messages to all of your clients. You are expected to create one
 //! [`WebPushBuilder`] for each client you want to send messages to, but can
-//! reuse the same builder for multiple push requests to the same client.
+//! reuse the same builder for multiple push requests to the same
+//! client.
+//!
+//! Please see the [`/example`](https://github.com/leotaku/web-push-native/tree/master/example)
+//! directory on GitHub for a more fully-featured example.
 //!
 //! ```
 //! use hyper::{Body, Client};
