@@ -116,11 +116,11 @@ impl WebPushBuilder {
     }
 
     /// Sets the VAPID signature header for generated HTTP push requests.
-    pub fn with_vapid<S: ToString>(
+    pub fn with_vapid<'a>(
         self,
-        vapid_kp: ES256KeyPair,
-        contact: S,
-    ) -> WebPushBuilder<vapid::VapidAuthorization> {
+        vapid_kp: &'a ES256KeyPair,
+        contact: &'a str,
+    ) -> WebPushBuilder<vapid::VapidAuthorization<'a>> {
         WebPushBuilder {
             uri: self.uri,
             valid_duration: self.valid_duration,

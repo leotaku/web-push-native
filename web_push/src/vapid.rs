@@ -6,23 +6,20 @@ use jwt_simple::{
     prelude::Duration,
 };
 
-pub struct VapidAuthorization {
-    vapid_kp: ES256KeyPair,
-    contact: String,
+pub struct VapidAuthorization<'a> {
+    vapid_kp: &'a ES256KeyPair,
+    contact: &'a str,
 }
 
-impl VapidAuthorization {
-    pub fn new<T: ToString>(vapid_kp: ES256KeyPair, contact: T) -> Self {
-        Self {
-            vapid_kp,
-            contact: contact.to_string(),
-        }
+impl<'a> VapidAuthorization<'a> {
+    pub fn new(vapid_kp: &'a ES256KeyPair, contact: &'a str) -> Self {
+        Self { vapid_kp, contact }
     }
 }
 
-impl AddHeaders for VapidAuthorization {
+impl<'a> AddHeaders for VapidAuthorization<'a> {
     fn add_headers(
-        this: &WebPushBuilder<VapidAuthorization>,
+        this: &WebPushBuilder<VapidAuthorization<'a>>,
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error> {
         let vapid = VapidSignature::sign(
