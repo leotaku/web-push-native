@@ -79,12 +79,13 @@ pub type Error = Box<dyn std::error::Error>;
 pub type Auth = GenericArray<u8, U16>;
 
 /// Reusable builder for HTTP push requests
-pub struct WebPushBuilder {
+#[derive(Clone, Debug)]
+pub struct WebPushBuilder<A = Nothing> {
     uri: Uri,
     valid_duration: Duration,
     ua_public: p256::PublicKey,
     ua_auth: Auth,
-    vapid: Option<(ES256KeyPair, String)>,
+    http_auth: A,
 }
 
 impl WebPushBuilder {
@@ -102,7 +103,7 @@ impl WebPushBuilder {
             ua_public,
             ua_auth,
             valid_duration: Duration::from_hours(12),
-            vapid: None,
+            http_auth: Nothing,
         }
     }
 
@@ -114,12 +115,25 @@ impl WebPushBuilder {
     }
 
     /// Sets the VAPID signature header for generated HTTP push requests.
-    pub fn with_vapid<T: ToString>(self, vapid_kp: ES256KeyPair, contact: T) -> Self {
-        let mut this = self;
-        this.vapid = Some((vapid_kp, contact.to_string()));
-        this
+    pub fn with_vapid<S: ToString>(
+        self,
+        vapid_kp: ES256KeyPair,
+        contact: S,
+    ) -> WebPushBuilder<VapidAuthorization> {
+        WebPushBuilder {
+            uri: self.uri,
+            valid_duration: self.valid_duration,
+            ua_public: self.ua_public,
+            ua_auth: self.ua_auth,
+            http_auth: VapidAuthorization {
+                vapid_kp,
+                contact: contact.to_string(),
+            },
+        }
     }
+}
 
+impl<A: AddHeaders> WebPushBuilder<A> {
     /// Generates a new HTTP push request according to the
     /// specifications of the builder.
     pub fn build<T: Into<Vec<u8>>>(
@@ -129,7 +143,7 @@ impl WebPushBuilder {
         let body = body.into();
 
         let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
-        let mut builder = Request::builder()
+        let builder = Request::builder()
             .uri(self.uri.clone())
             .method(http::method::Method::POST)
             .header("TTL", self.valid_duration.as_secs())
@@ -137,11 +151,7 @@ impl WebPushBuilder {
             .header(header::CONTENT_TYPE, "application/octet-stream")
             .header(header::CONTENT_LENGTH, payload.len());
 
-        if let Some((vapid_kp, contact)) = &self.vapid {
-            let vapid_sign =
-                VapidSignature::sign(&self.uri, self.valid_duration, contact, vapid_kp)?;
-            builder = builder.header(header::AUTHORIZATION, vapid_sign);
-        }
+        let builder = AddHeaders::add_headers(self, builder)?;
 
         Ok(builder.body(payload)?)
     }
@@ -225,6 +235,48 @@ fn compute_ikm(
         .expect("okm length is always 32 bytes, cannot be too large");
 
     okm
+}
+
+#[doc(hidden)]
+pub trait AddHeaders: Sized {
+    fn add_headers(
+        web: &WebPushBuilder<Self>,
+        builder: http::request::Builder,
+    ) -> Result<http::request::Builder, Error>;
+}
+
+#[derive(Clone, Copy, Debug)]
+#[doc(hidden)]
+pub struct Nothing;
+
+impl AddHeaders for Nothing {
+    fn add_headers(
+        _web: &WebPushBuilder<Nothing>,
+        builder: http::request::Builder,
+    ) -> Result<http::request::Builder, Error> {
+        Ok(builder)
+    }
+}
+
+#[doc(hidden)]
+pub struct VapidAuthorization {
+    vapid_kp: ES256KeyPair,
+    contact: String,
+}
+
+impl AddHeaders for VapidAuthorization {
+    fn add_headers(
+        web: &WebPushBuilder<VapidAuthorization>,
+        builder: http::request::Builder,
+    ) -> Result<http::request::Builder, Error> {
+        let vapid = VapidSignature::sign(
+            &web.uri,
+            web.valid_duration,
+            web.http_auth.contact.to_string(),
+            &web.http_auth.vapid_kp,
+        )?;
+        Ok(builder.header(header::AUTHORIZATION, vapid))
+    }
 }
 
 #[derive(Clone, Debug)]
