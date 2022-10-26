@@ -16,8 +16,6 @@
 //! directory on GitHub for a more fully-featured example.
 //!
 //! ```
-//! use hyper::{Body, Client};
-//! use hyper_rustls::HttpsConnectorBuilder;
 //! use web_push_native::{
 //!     jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, Error, WebPushBuilder,
 //! };
@@ -33,14 +31,7 @@
 //! // source tree in real projects!
 //! const VAPID: &str = "";
 //!
-//! async fn push(content: Body) -> Result<http::Request<Body>, Error> {
-//!     let https = HttpsConnectorBuilder::new()
-//!         .with_native_roots()
-//!         .https_only()
-//!         .enable_http1()
-//!         .build();
-//!     let client: Client<_, Body> = Client::builder().build(https);
-//!
+//! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Error> {
 //!     let builder = WebPushBuilder::new(
 //!         ENDPOINT.parse()?,
 //!         PublicKey::from_sec1_bytes(&base64::decode_config(P256DH, base64::URL_SAFE)?)?,
@@ -48,7 +39,7 @@
 //!     )
 //!     .with_vapid(
 //!         ES256KeyPair::from_bytes(&base64::decode_config(VAPID, base64::URL_SAFE)?)?,
-//!         "mailto:example@example.com",
+//!         "mailto:john.doe@example.com",
 //!     );
 //!
 //!     builder.build(content).map(|body| body.into())

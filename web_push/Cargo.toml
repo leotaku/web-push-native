@@ -12,7 +12,7 @@ repository = "https://github.com/leotaku/web-push-native"
 version = "0.1.0-pre2"
 
 [lib]
-doctest = false
+doctest = true
 
 [features]
 default = ["serde", "vapid"]
