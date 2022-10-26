@@ -97,7 +97,7 @@ fn api_routes() -> Router {
             post(
                 |extract::Json(message): extract::Json<String>,
                  extract::Extension(state): axum::Extension<SharedState>| {
-                    let maybe = state.read().ok().map(|it| it.builder.clone()).flatten();
+                    let maybe = state.read().ok().and_then(|it| it.builder.clone());
                     async {
                         if let Some(builder) = maybe {
                             match push(message, builder).await {
