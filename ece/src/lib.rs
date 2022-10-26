@@ -166,7 +166,7 @@ fn decrypt_record<'a>(
         .as_ref()
         .iter()
         .rposition(|it| *it != 0)
-        .ok_or_else(|| Error::PaddingInvalid)?;
+        .ok_or(Error::PaddingInvalid)?;
     match msg[pad_index] {
         2 if !is_last => Err(Error::PaddingInvalid),
         1 if is_last => Err(Error::PaddingInvalid),
