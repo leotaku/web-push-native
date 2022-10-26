@@ -32,15 +32,13 @@
 //! const VAPID: &str = "";
 //!
 //! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Error> {
+//!     let key_pair = ES256KeyPair::from_bytes(&base64::decode_config(VAPID, base64::URL_SAFE)?)?;
 //!     let builder = WebPushBuilder::new(
 //!         ENDPOINT.parse()?,
 //!         PublicKey::from_sec1_bytes(&base64::decode_config(P256DH, base64::URL_SAFE)?)?,
 //!         Auth::clone_from_slice(&base64::decode_config(AUTH, base64::URL_SAFE)?),
 //!     )
-//!     .with_vapid(
-//!         ES256KeyPair::from_bytes(&base64::decode_config(VAPID, base64::URL_SAFE)?)?,
-//!         "mailto:john.doe@example.com",
-//!     );
+//!     .with_vapid(&key_pair, "mailto:john.doe@example.com");
 //!
 //!     builder.build(content)
 //! }
@@ -112,15 +110,11 @@ impl WebPushBuilder {
 
     /// Sets the VAPID signature header for generated HTTP push requests.
     #[cfg(feature = "vapid")]
-    pub fn with_vapid<K, C>(
+    pub fn with_vapid<'a>(
         self,
-        vapid_kp: K,
-        contact: C,
-    ) -> WebPushBuilder<vapid::VapidAuthorization<K, C>>
-    where
-        K: std::borrow::Borrow<jwt_simple::prelude::ES256KeyPair>,
-        C: ToString,
-    {
+        vapid_kp: &'a jwt_simple::algorithms::ES256KeyPair,
+        contact: &'a str,
+    ) -> WebPushBuilder<vapid::VapidAuthorization<'a>> {
         WebPushBuilder {
             endpoint: self.endpoint,
             valid_duration: self.valid_duration,
