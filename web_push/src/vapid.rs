@@ -4,20 +4,20 @@ use jwt_simple::{
     algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256KeyPair, ES256PublicKey},
     claims::Claims,
 };
-use std::time::Duration;
+use std::{time::Duration, borrow::Borrow};
 
-pub struct VapidAuthorization<'a> {
-    vapid_kp: &'a ES256KeyPair,
-    contact: &'a str,
+pub struct VapidAuthorization<K, C> {
+    vapid_kp: K,
+    contact: C,
 }
 
-impl<'a> VapidAuthorization<'a> {
-    pub fn new(vapid_kp: &'a ES256KeyPair, contact: &'a str) -> Self {
+impl<K: Borrow<ES256KeyPair>, C: ToString> VapidAuthorization<K, C> {
+    pub fn new(vapid_kp: K, contact: C) -> Self {
         Self { vapid_kp, contact }
     }
 }
 
-impl<'a> AddHeaders for VapidAuthorization<'a> {
+impl<K: Borrow<ES256KeyPair>, C: ToString> AddHeaders for VapidAuthorization<K, C> {
     fn add_headers(
         this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
@@ -26,7 +26,7 @@ impl<'a> AddHeaders for VapidAuthorization<'a> {
             &this.endpoint,
             this.valid_duration,
             this.http_auth.contact.to_string(),
-            &this.http_auth.vapid_kp,
+            this.http_auth.vapid_kp.borrow(),
         )?;
         Ok(builder.header(header::AUTHORIZATION, vapid))
     }

@@ -121,11 +121,15 @@ impl WebPushBuilder {
 
     /// Sets the VAPID signature header for generated HTTP push requests.
     #[cfg(feature = "vapid")]
-    pub fn with_vapid<'a>(
+    pub fn with_vapid<K, C>(
         self,
-        vapid_kp: &'a ES256KeyPair,
-        contact: &'a str,
-    ) -> WebPushBuilder<vapid::VapidAuthorization<'a>> {
+        vapid_kp: K,
+        contact: C,
+    ) -> WebPushBuilder<vapid::VapidAuthorization<K, C>>
+    where
+        K: std::borrow::Borrow<jwt_simple::prelude::ES256KeyPair>,
+        C: ToString,
+    {
         WebPushBuilder {
             endpoint: self.endpoint,
             valid_duration: self.valid_duration,

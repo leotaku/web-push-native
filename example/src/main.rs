@@ -35,7 +35,7 @@ async fn push(message: String, builder: WebPushBuilder) -> Result<(), Box<dyn st
     let client: Client<_, Body> = Client::builder().build(https);
 
     let request = builder
-        .with_vapid(&VAPID_PRIVATE, "mailto:john.doe@example.com")
+        .with_vapid(&*VAPID_PRIVATE, "mailto:john.doe@example.com")
         .build(format!(r#"{{"title": "{}", "body": ""}}"#, message))?
         .map(|body| body.into());
 
