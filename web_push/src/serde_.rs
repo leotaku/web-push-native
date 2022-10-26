@@ -1,6 +1,7 @@
 use super::*;
 use base64;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use std::time::Duration;
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename = "WebPushBuilder", rename_all = "camelCase")]
@@ -79,7 +80,7 @@ impl<'de> Deserialize<'de> for WebPushBuilder {
         let serde = WebPushSerde::deserialize(deserializer)?;
         Ok(WebPushBuilder {
             uri: serde.endpoint,
-            valid_duration: Duration::from_hours(12),
+            valid_duration: Duration::from_secs(12 * 60 * 60),
             ua_public: serde.keys.p256dh,
             ua_auth: serde.keys.auth,
             http_auth: (),

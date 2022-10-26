@@ -3,8 +3,8 @@ use http::{header, Uri};
 use jwt_simple::{
     algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256KeyPair, ES256PublicKey},
     claims::Claims,
-    prelude::Duration,
 };
+use std::time::Duration;
 
 pub struct VapidAuthorization<'a> {
     vapid_kp: &'a ES256KeyPair,
@@ -47,7 +47,7 @@ impl VapidSignature {
         contact: T,
         key: &ES256KeyPair,
     ) -> Result<VapidSignature, jwt_simple::Error> {
-        let claims = Claims::create(valid_duration)
+        let claims = Claims::create(valid_duration.into())
             .with_audience(format!(
                 "{}://{}",
                 endpoint.scheme_str().unwrap(),

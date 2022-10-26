@@ -71,9 +71,9 @@ use aes_gcm::aead::{
 };
 use hkdf::Hkdf;
 use http::{self, header, Request, Uri};
-use jwt_simple::{algorithms::ES256KeyPair, prelude::Duration};
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
+use std::time::Duration;
 
 /// Opaque error type for HTTP push failure modes
 pub type Error = Box<dyn std::error::Error>;
@@ -105,7 +105,7 @@ impl WebPushBuilder {
             uri,
             ua_public,
             ua_auth,
-            valid_duration: Duration::from_hours(12),
+            valid_duration: Duration::from_secs(12 * 60 * 60),
             http_auth: (),
         }
     }
