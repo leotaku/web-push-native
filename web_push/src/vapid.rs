@@ -19,7 +19,7 @@ impl<'a> VapidAuthorization<'a> {
 
 impl<'a> AddHeaders for VapidAuthorization<'a> {
     fn add_headers(
-        this: &WebPushBuilder<VapidAuthorization<'a>>,
+        this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error> {
         let vapid = VapidSignature::sign(

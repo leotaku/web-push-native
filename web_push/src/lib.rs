@@ -146,7 +146,7 @@ pub trait AddHeaders: Sized {
 
 impl AddHeaders for () {
     fn add_headers(
-        _this: &WebPushBuilder<()>,
+        _this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error> {
         Ok(builder)
