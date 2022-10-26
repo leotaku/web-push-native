@@ -84,7 +84,7 @@ pub type Auth = GenericArray<u8, U16>;
 /// Reusable builder for HTTP push requests
 #[derive(Clone, Debug)]
 pub struct WebPushBuilder<A = ()> {
-    uri: Uri,
+    endpoint: Uri,
     valid_duration: Duration,
     ua_public: p256::PublicKey,
     ua_auth: Auth,
@@ -100,9 +100,9 @@ impl WebPushBuilder {
     /// Most providers accepting HTTP push requests will require a valid VAPID
     /// signature, so you will most likely want to add one using
     /// [`WebPushBuilder::with_vapid`].
-    pub fn new<'a>(uri: Uri, ua_public: p256::PublicKey, ua_auth: Auth) -> Self {
+    pub fn new<'a>(endpoint: Uri, ua_public: p256::PublicKey, ua_auth: Auth) -> Self {
         Self {
-            uri,
+            endpoint,
             ua_public,
             ua_auth,
             valid_duration: Duration::from_secs(12 * 60 * 60),
@@ -124,7 +124,7 @@ impl WebPushBuilder {
         contact: &'a str,
     ) -> WebPushBuilder<vapid::VapidAuthorization<'a>> {
         WebPushBuilder {
-            uri: self.uri,
+            endpoint: self.endpoint,
             valid_duration: self.valid_duration,
             ua_public: self.ua_public,
             ua_auth: self.ua_auth,
@@ -158,7 +158,7 @@ impl<A: AddHeaders> WebPushBuilder<A> {
 
         let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
         let builder = Request::builder()
-            .uri(self.uri.clone())
+            .uri(self.endpoint.clone())
             .method(http::method::Method::POST)
             .header("TTL", self.valid_duration.as_secs())
             .header(header::CONTENT_ENCODING, "aes128gcm")

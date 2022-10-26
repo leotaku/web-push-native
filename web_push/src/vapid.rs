@@ -23,7 +23,7 @@ impl<'a> AddHeaders for VapidAuthorization<'a> {
         builder: http::request::Builder,
     ) -> Result<http::request::Builder, Error> {
         let vapid = VapidSignature::sign(
-            &this.uri,
+            &this.endpoint,
             this.valid_duration,
             this.http_auth.contact.to_string(),
             &this.http_auth.vapid_kp,

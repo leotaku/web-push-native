@@ -61,7 +61,7 @@ impl Serialize for WebPushBuilder {
         S: Serializer,
     {
         WebPushSerde {
-            endpoint: self.uri.clone(),
+            endpoint: self.endpoint.clone(),
             expiration_time: (),
             keys: Keys {
                 auth: self.ua_auth,
@@ -79,7 +79,7 @@ impl<'de> Deserialize<'de> for WebPushBuilder {
     {
         let serde = WebPushSerde::deserialize(deserializer)?;
         Ok(WebPushBuilder {
-            uri: serde.endpoint,
+            endpoint: serde.endpoint,
             valid_duration: Duration::from_secs(12 * 60 * 60),
             ua_public: serde.keys.p256dh,
             ua_auth: serde.keys.auth,
