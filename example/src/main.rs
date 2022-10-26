@@ -17,7 +17,7 @@ use web_push_native::{
 };
 
 /// VAPID key pair (keep private for real applications)
-const VAPID_PRIVATE: Lazy<ES256KeyPair> = Lazy::new(|| {
+static VAPID_PRIVATE: Lazy<ES256KeyPair> = Lazy::new(|| {
     let bytes = base64::decode_config(
         b"RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw",
         base64::URL_SAFE,
