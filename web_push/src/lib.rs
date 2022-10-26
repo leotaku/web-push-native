@@ -59,8 +59,10 @@
 mod serde_;
 #[cfg(test)]
 mod tests;
+#[cfg(feature = "vapid")]
 mod vapid;
 
+#[cfg(feature = "vapid")]
 pub use jwt_simple;
 pub use p256;
 
@@ -118,6 +120,7 @@ impl WebPushBuilder {
     }
 
     /// Sets the VAPID signature header for generated HTTP push requests.
+    #[cfg(feature = "vapid")]
     pub fn with_vapid<'a>(
         self,
         vapid_kp: &'a ES256KeyPair,

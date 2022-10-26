@@ -15,16 +15,17 @@ version = "0.1.0-pre2"
 doctest = false
 
 [features]
-default = ["serde"]
-serde = ["dep:serde"]
+default = ["serde", "vapid"]
+serde = ["dep:serde", "dep:base64"]
+vapid = ["dep:jwt-simple", "dep:base64"]
 
 [dependencies]
 aes-gcm = "0.10.1"
-base64 = "0.13.1"
+base64 = { version = "0.13.1", optional = true }
 ece-native = { version = "0.1.0-pre3", path = "../ece" }
 hkdf = "0.12.3"
 http = "0.2.8"
-jwt-simple = "0.11.1"
+jwt-simple = { version = "0.11.1", optional = true }
 p256 = { version = "0.11.1", features = ["ecdh"] }
 serde = { version = "1.0.147", optional = true }
 sha2 = "0.10.6"
