@@ -42,7 +42,7 @@
 //!         "mailto:john.doe@example.com",
 //!     );
 //!
-//!     builder.build(content).map(|body| body.into())
+//!     builder.build(content)
 //! }
 //! ```
 
