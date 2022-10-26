@@ -224,7 +224,7 @@ pub fn decrypt(
         p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::Aes128Gcm)?;
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
-    let ikm = compute_ikm(&ua_auth, &shared, &as_secret.public_key(), &ua_public);
+    let ikm = compute_ikm(ua_auth, &shared, &as_secret.public_key(), &ua_public);
 
     ece_native::decrypt(ikm, encrypted_message)
 }
@@ -242,7 +242,7 @@ fn compute_ikm(
     info.extend_from_slice(as_public.as_affine().to_encoded_point(false).as_bytes());
 
     let mut okm = [0u8; 32];
-    let hk = Hkdf::<Sha256>::new(Some(&auth), shared.raw_secret_bytes().as_ref());
+    let hk = Hkdf::<Sha256>::new(Some(auth), shared.raw_secret_bytes().as_ref());
     hk.expand(&info, &mut okm)
         .expect("okm length is always 32 bytes, cannot be too large");
 

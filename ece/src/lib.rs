@@ -158,8 +158,8 @@ fn decrypt_record<'a>(
     let tag_pos = record.len() - <Aes128Gcm as aes_gcm::AeadCore>::TagSize::to_usize();
     let (msg, tag) = record.as_mut().split_at_mut(tag_pos);
 
-    Aes128Gcm::new(&key)
-        .decrypt_in_place_detached(&nonce, b"", msg, Tag::<Aes128Gcm>::from_slice(tag))
+    Aes128Gcm::new(key)
+        .decrypt_in_place_detached(nonce, b"", msg, Tag::<Aes128Gcm>::from_slice(tag))
         .map_err(|_| Error::Aes128Gcm)?;
 
     let pad_index = msg
@@ -167,7 +167,7 @@ fn decrypt_record<'a>(
         .iter()
         .rposition(|it| *it != 0)
         .ok_or_else(|| Error::PaddingInvalid)?;
-    match msg.as_ref()[pad_index] {
+    match msg[pad_index] {
         2 if !is_last => Err(Error::PaddingInvalid),
         1 if is_last => Err(Error::PaddingInvalid),
         _ => Ok(&msg[..pad_index]),
