@@ -9,7 +9,7 @@ license = "MIT OR Apache-2.0"
 name = "web-push-native"
 readme = "README.md"
 repository = "https://github.com/leotaku/web-push-native"
-version = "0.1.0-pre2"
+version = "0.1.0-pre4"
 
 [lib]
 doctest = true
@@ -22,7 +22,7 @@ vapid = ["dep:jwt-simple", "dep:base64"]
 [dependencies]
 aes-gcm = "0.10.1"
 base64 = { version = "0.13.1", optional = true }
-ece-native = { version = "0.1.0-pre3", path = "../ece" }
+ece-native = { version = "0.1.0-pre4", path = "../ece" }
 hkdf = "0.12.3"
 http = "0.2.8"
 jwt-simple = { version = "0.11.1", optional = true }
