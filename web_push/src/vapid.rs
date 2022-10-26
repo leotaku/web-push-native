@@ -46,12 +46,12 @@ impl VapidSignature {
         valid_duration: Duration,
         contact: T,
         key: &ES256KeyPair,
-    ) -> Result<VapidSignature, jwt_simple::Error> {
+    ) -> Result<VapidSignature, Error> {
         let claims = Claims::create(valid_duration.into())
             .with_audience(format!(
                 "{}://{}",
-                endpoint.scheme_str().unwrap(),
-                endpoint.host().unwrap()
+                endpoint.scheme_str().ok_or("missing scheme in endpoint")?,
+                endpoint.host().ok_or("missing host in endpoint")?
             ))
             .with_subject(contact);
 
