@@ -93,7 +93,7 @@ impl WebPushBuilder {
     /// Most providers accepting HTTP push requests will require a valid VAPID
     /// signature, so you will most likely want to add one using
     /// [`WebPushBuilder::with_vapid`].
-    pub fn new<'a>(endpoint: Uri, ua_public: p256::PublicKey, ua_auth: Auth) -> Self {
+    pub fn new(endpoint: Uri, ua_public: p256::PublicKey, ua_auth: Auth) -> Self {
         Self {
             endpoint,
             ua_public,
