@@ -9,7 +9,6 @@ use hyper::{header, Body, Client, StatusCode};
 use hyper_rustls::HttpsConnectorBuilder;
 use once_cell::sync::Lazy;
 use std::sync::{Arc, RwLock};
-use tower_http::add_extension::AddExtensionLayer;
 use tower_livereload::LiveReloadLayer;
 use web_push_native::{
     jwt_simple::algorithms::{ECDSAP256KeyPairLike, ES256KeyPair},
@@ -83,8 +82,8 @@ fn api_routes() -> Router {
         .route(
             "/register",
             post(
-                |extract::Json(builder): extract::Json<WebPushBuilder>,
-                 extract::Extension(state): axum::Extension<SharedState>| {
+                |axum::extract::State(state): axum::extract::State<SharedState>,
+                 extract::Json(builder): extract::Json<WebPushBuilder>| {
                     if let Ok(ref mut state) = state.try_write() {
                         state.builder = Some(builder)
                     }
@@ -95,8 +94,8 @@ fn api_routes() -> Router {
         .route(
             "/message",
             post(
-                |extract::Json(message): extract::Json<String>,
-                 extract::Extension(state): axum::Extension<SharedState>| {
+                |axum::extract::State(state): axum::extract::State<SharedState>,
+                 extract::Json(message): extract::Json<String>| {
                     let maybe = state.read().ok().and_then(|it| it.builder.clone());
                     async {
                         if let Some(builder) = maybe {
@@ -114,7 +113,7 @@ fn api_routes() -> Router {
                 },
             ),
         )
-        .layer(AddExtensionLayer::new(SharedState::default()))
+        .with_state(SharedState::default())
 }
 
 fn static_routes() -> Router {
