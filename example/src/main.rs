@@ -25,7 +25,10 @@ static VAPID_PRIVATE: Lazy<ES256KeyPair> = Lazy::new(|| {
     ES256KeyPair::from_bytes(&bytes).expect("this to be a valid private key")
 });
 
-async fn push(message: String, builder: WebPushBuilder) -> Result<(), Box<dyn std::error::Error>> {
+async fn push(
+    message: serde_json::Value,
+    builder: WebPushBuilder,
+) -> Result<(), Box<dyn std::error::Error>> {
     let https = HttpsConnectorBuilder::new()
         .with_native_roots()
         .https_only()
@@ -35,7 +38,7 @@ async fn push(message: String, builder: WebPushBuilder) -> Result<(), Box<dyn st
 
     let request = builder
         .with_vapid(&VAPID_PRIVATE, "mailto:john.doe@example.com")
-        .build(format!(r#"{{"title": "{}", "body": ""}}"#, message))?
+        .build(message.to_string())?
         .map(|body| body.into());
 
     client.request(request).await?;
@@ -95,7 +98,7 @@ fn api_routes() -> Router {
             "/message",
             post(
                 |axum::extract::State(state): axum::extract::State<SharedState>,
-                 extract::Json(message): extract::Json<String>| {
+                 extract::Json(message): extract::Json<serde_json::Value>| {
                     let maybe = state.read().ok().and_then(|it| it.builder.clone());
                     async {
                         if let Some(builder) = maybe {
