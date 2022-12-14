@@ -27,7 +27,7 @@ hkdf = "0.12.3"
 http = "0.2.8"
 jwt-simple = { version = "0.11.2", optional = true }
 p256 = { version = "0.11.1", features = ["ecdh"] }
-serde = { version = "1.0.147", optional = true }
+serde = { version = "1.0.150", optional = true }
 sha2 = "0.10.6"
 
 [dev-dependencies]
