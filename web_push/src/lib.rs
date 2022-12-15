@@ -80,6 +80,7 @@ pub struct WebPushBuilder<A = ()> {
     valid_duration: Duration,
     ua_public: p256::PublicKey,
     ua_auth: Auth,
+    #[cfg_attr(not(feature = "vapid"), allow(dead_code))]
     http_auth: A,
 }
 
