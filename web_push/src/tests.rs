@@ -1,15 +1,16 @@
 use super::*;
+use base64ct::{Base64UrlUnpadded, Encoding};
 
 macro_rules! DECODE {
     ($e:expr) => {
         Lazy::new(|| {
-            let decoded = base64::decode_config($e, base64::URL_SAFE_NO_PAD).unwrap();
+            let decoded = Base64UrlUnpadded::decode_vec($e).unwrap();
             decoded.try_into().unwrap()
         })
     };
     ($extract:expr, $e:expr) => {
         Lazy::new(|| {
-            let decoded = base64::decode_config($e, base64::URL_SAFE_NO_PAD).unwrap();
+            let decoded = Base64UrlUnpadded::decode_vec($e).unwrap();
             Some($extract(&decoded).ok()).flatten().unwrap()
         })
     };

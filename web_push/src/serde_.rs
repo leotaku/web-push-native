@@ -1,4 +1,5 @@
 use super::{Auth, WebPushBuilder};
+use base64ct::{Base64UrlUnpadded, Encoding};
 use http::Uri;
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
@@ -31,27 +32,26 @@ fn string_to_url<'de, D: Deserializer<'de>>(d: D) -> Result<Uri, D::Error> {
 }
 
 fn auth_to_bytes<S: Serializer>(auth: &Auth, s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_str(&base64::encode_config(auth.as_slice(), base64::URL_SAFE))
+    s.serialize_str(&Base64UrlUnpadded::encode_string(auth.as_slice()))
 }
 
 fn bytes_to_auth<'de, D: Deserializer<'de>>(d: D) -> Result<Auth, D::Error> {
     let b64: &str = Deserialize::deserialize(d)?;
     Ok(Auth::clone_from_slice(
-        &base64::decode_config(b64, base64::URL_SAFE).map_err(de::Error::custom)?,
+        &Base64UrlUnpadded::decode_vec(b64).map_err(de::Error::custom)?,
     ))
 }
 
 fn p256_to_bytes<S: Serializer>(auth: &p256::PublicKey, s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_str(&base64::encode_config(
+    s.serialize_str(&Base64UrlUnpadded::encode_string(
         auth.to_encoded_point(false).as_bytes(),
-        base64::URL_SAFE,
     ))
 }
 
 fn bytes_to_p256<'de, D: Deserializer<'de>>(d: D) -> Result<p256::PublicKey, D::Error> {
     let b64: &str = Deserialize::deserialize(d)?;
     p256::PublicKey::from_sec1_bytes(
-        &base64::decode_config(b64, base64::URL_SAFE).map_err(de::Error::custom)?,
+        &Base64UrlUnpadded::decode_vec(b64).map_err(de::Error::custom)?,
     )
     .map_err(de::Error::custom)
 }

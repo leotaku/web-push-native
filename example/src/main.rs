@@ -5,6 +5,7 @@ use axum::{
     routing::{get, post},
     Json, Router, Server,
 };
+use base64ct::{Base64UrlUnpadded, Encoding};
 use hyper::{header, Body, Client, StatusCode};
 use hyper_rustls::HttpsConnectorBuilder;
 use once_cell::sync::Lazy;
@@ -17,11 +18,8 @@ use web_push_native::{
 
 /// VAPID key pair (keep private for real applications)
 static VAPID_PRIVATE: Lazy<ES256KeyPair> = Lazy::new(|| {
-    let bytes = base64::decode_config(
-        b"RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw",
-        base64::URL_SAFE,
-    )
-    .expect("this to be valid base64");
+    let bytes = Base64UrlUnpadded::decode_vec("RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw")
+        .expect("this to be valid base64");
     ES256KeyPair::from_bytes(&bytes).expect("this to be a valid private key")
 });
 
@@ -71,7 +69,7 @@ fn api_routes() -> Router {
         .route(
             "/vapid.json",
             get(|| async {
-                let encoded = base64::encode(
+                let encoded = Base64UrlUnpadded::encode_string(
                     &VAPID_PRIVATE
                         .key_pair()
                         .public_key()

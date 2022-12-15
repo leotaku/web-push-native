@@ -1,11 +1,11 @@
 use super::*;
-use base64;
+use base64ct::{Base64UrlUnpadded, Encoding};
 use once_cell::sync::Lazy;
 
 macro_rules! DECODE {
     ($e:expr) => {
         Lazy::new(|| {
-            let decoded = base64::decode_config($e, base64::URL_SAFE_NO_PAD).unwrap();
+            let decoded = Base64UrlUnpadded::decode_vec($e).unwrap();
             decoded.try_into().unwrap()
         })
     };
