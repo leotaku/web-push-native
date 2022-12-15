@@ -15,9 +15,9 @@ version = "0.1.0"
 doctest = true
 
 [features]
-default = ["serde", "vapid"]
-serde = ["dep:serde", "dep:base64ct"]
-vapid = ["dep:jwt-simple", "dep:base64ct"]
+default = ["serialization", "vapid"]
+serialization = ["serde", "base64ct"]
+vapid = ["jwt-simple", "base64ct"]
 
 [dependencies]
 aes-gcm = "0.10.1"
