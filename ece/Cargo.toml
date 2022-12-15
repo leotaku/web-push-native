@@ -17,5 +17,5 @@ hkdf = "0.12.3"
 sha2 = "0.10.6"
 
 [dev-dependencies]
-base64 = "0.13.1"
+base64ct = { version = "1.5.3", features = ["alloc", "std"] }
 once_cell = "1.16.0"
