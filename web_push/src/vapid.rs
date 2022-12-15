@@ -1,4 +1,5 @@
 use super::{AddHeaders, Error, WebPushBuilder};
+use base64ct::{Base64UrlUnpadded, Encoding};
 use http::{header, Uri};
 use jwt_simple::{
     algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256KeyPair, ES256PublicKey},
@@ -64,9 +65,8 @@ impl VapidSignature {
 
 impl From<VapidSignature> for http::HeaderValue {
     fn from(signature: VapidSignature) -> Self {
-        let encoded_public = base64::encode_config(
-            signature.public_key.public_key().to_bytes_uncompressed(),
-            base64::URL_SAFE_NO_PAD,
+        let encoded_public = Base64UrlUnpadded::encode_string(
+            &signature.public_key.public_key().to_bytes_uncompressed(),
         );
         let value = format!("vapid t={}, k={}", signature.token, encoded_public);
         Self::try_from(value).unwrap()

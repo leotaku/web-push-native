@@ -16,6 +16,7 @@
 //! directory on GitHub for a more fully-featured example.
 //!
 //! ```
+//! use base64ct::{Base64UrlUnpadded, Encoding};
 //! use web_push_native::{
 //!     jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, Error, WebPushBuilder,
 //! };
@@ -32,11 +33,11 @@
 //! const VAPID: &str = "";
 //!
 //! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Error> {
-//!     let key_pair = ES256KeyPair::from_bytes(&base64::decode_config(VAPID, base64::URL_SAFE)?)?;
+//!     let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID)?)?;
 //!     let builder = WebPushBuilder::new(
 //!         ENDPOINT.parse()?,
-//!         PublicKey::from_sec1_bytes(&base64::decode_config(P256DH, base64::URL_SAFE)?)?,
-//!         Auth::clone_from_slice(&base64::decode_config(AUTH, base64::URL_SAFE)?),
+//!         PublicKey::from_sec1_bytes(&Base64UrlUnpadded::decode_vec(P256DH)?)?,
+//!         Auth::clone_from_slice(&Base64UrlUnpadded::decode_vec(AUTH)?),
 //!     )
 //!     .with_vapid(&key_pair, "mailto:john.doe@example.com");
 //!
