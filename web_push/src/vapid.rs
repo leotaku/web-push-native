@@ -27,7 +27,7 @@ impl<'a> AddHeaders for VapidAuthorization<'a> {
             &this.endpoint,
             this.valid_duration,
             this.http_auth.contact.to_string(),
-            &this.http_auth.vapid_kp,
+            this.http_auth.vapid_kp,
         )?;
         Ok(builder.header(header::AUTHORIZATION, vapid))
     }
