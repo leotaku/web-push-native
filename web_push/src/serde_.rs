@@ -3,14 +3,14 @@ use base64ct::{Base64UrlUnpadded, Encoding};
 use http::Uri;
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::time::Duration;
+use std::{borrow::Cow, time::Duration};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename = "WebPushBuilder", rename_all = "camelCase")]
-struct WebPushSerde {
+struct WebPushSerde<'a> {
     #[serde(serialize_with = "url_to_string", deserialize_with = "string_to_url")]
-    endpoint: Uri,
-    expiration_time: (),
+    endpoint: Cow<'a, Uri>,
+    expiration_time: Option<Duration>,
     keys: Keys,
 }
 
@@ -22,13 +22,13 @@ struct Keys {
     p256dh: p256::PublicKey,
 }
 
-fn url_to_string<S: Serializer>(url: &Uri, s: S) -> Result<S::Ok, S::Error> {
+fn url_to_string<S: Serializer>(url: &Cow<Uri>, s: S) -> Result<S::Ok, S::Error> {
     s.serialize_str(&url.to_string())
 }
 
-fn string_to_url<'de, D: Deserializer<'de>>(d: D) -> Result<Uri, D::Error> {
+fn string_to_url<'de, D: Deserializer<'de>>(d: D) -> Result<Cow<'static, Uri>, D::Error> {
     let s: &str = Deserialize::deserialize(d)?;
-    s.parse().map_err(de::Error::custom)
+    s.parse().map(Cow::Owned).map_err(de::Error::custom)
 }
 
 fn auth_to_bytes<S: Serializer>(auth: &Auth, s: S) -> Result<S::Ok, S::Error> {
@@ -62,8 +62,8 @@ impl Serialize for WebPushBuilder {
         S: Serializer,
     {
         WebPushSerde {
-            endpoint: self.endpoint.clone(),
-            expiration_time: (),
+            endpoint: Cow::Borrowed(&self.endpoint),
+            expiration_time: None,
             keys: Keys {
                 auth: self.ua_auth,
                 p256dh: self.ua_public,
@@ -80,7 +80,7 @@ impl<'de> Deserialize<'de> for WebPushBuilder {
     {
         let serde = WebPushSerde::deserialize(deserializer)?;
         Ok(WebPushBuilder {
-            endpoint: serde.endpoint,
+            endpoint: serde.endpoint.into_owned(),
             valid_duration: Duration::from_secs(12 * 60 * 60),
             ua_public: serde.keys.p256dh,
             ua_auth: serde.keys.auth,
