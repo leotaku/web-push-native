@@ -22,8 +22,8 @@ struct Keys {
     p256dh: p256::PublicKey,
 }
 
-fn url_to_string<S: Serializer>(url: &Cow<Uri>, s: S) -> Result<S::Ok, S::Error> {
-    s.serialize_str(&url.to_string())
+fn url_to_string<U: AsRef<Uri>, S: Serializer>(url: U, s: S) -> Result<S::Ok, S::Error> {
+    s.serialize_str(&url.as_ref().to_string())
 }
 
 fn string_to_url<'de, D: Deserializer<'de>>(d: D) -> Result<Cow<'static, Uri>, D::Error> {
