@@ -45,7 +45,7 @@
 //! }
 //! ```
 
-#[cfg(feature = "serde")]
+#[cfg(feature = "serialization")]
 mod serde_;
 #[cfg(test)]
 mod tests;

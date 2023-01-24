@@ -17,8 +17,8 @@ doctest = true
 
 [features]
 default = ["serialization", "vapid"]
-serialization = ["serde", "base64ct"]
-vapid = ["jwt-simple", "base64ct"]
+serialization = ["dep:serde", "dep:base64ct"]
+vapid = ["dep:jwt-simple", "dep:base64ct"]
 
 [dependencies]
 aes-gcm = "0.10.1"
