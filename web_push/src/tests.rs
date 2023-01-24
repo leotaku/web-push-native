@@ -37,6 +37,33 @@ fn test_encrypt_decrypt() {
     assert_eq!(decrypted, plaintext);
 }
 
+#[test]
+fn test_encrypt_decrypt_with_serialization() {
+    let vapid_pair = jwt_simple::algorithms::ES256KeyPair::generate();
+    let ece_secret = p256::SecretKey::random(&mut OsRng);
+    let mut auth = vec![0u8; 16];
+    OsRng.fill_bytes(&mut auth);
+    let auth = GenericArray::clone_from_slice(&auth);
+
+    let json = serde_json::json!({
+       "endpoint": "https://example.com/",
+       "expirationTime": (),
+       "keys": {
+           "auth": Base64UrlUnpadded::encode_string(&auth),
+           "p256dh": Base64UrlUnpadded::encode_string(&ece_secret.public_key().to_encoded_point(false).to_bytes()),
+      }
+    }).to_string();
+
+    let builder = serde_json::from_str::<WebPushBuilder>(&json)
+        .unwrap()
+        .with_vapid(&vapid_pair, "mailto:nobody@example.com");
+
+    let plaintext = b"I am the walrus".to_vec();
+    let ciphertext = builder.build(plaintext.clone()).unwrap().into_body();
+    let decrypted = decrypt(ciphertext, &ece_secret, &auth).unwrap();
+    assert_eq!(decrypted, plaintext);
+}
+
 mod rfc8291_example {
     use super::*;
     use once_cell::sync::Lazy;
