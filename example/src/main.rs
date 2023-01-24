@@ -102,7 +102,9 @@ fn api_routes() -> Router {
                         if let Some(builder) = maybe {
                             match push(message, builder).await {
                                 Ok(_) => (StatusCode::OK, "Ok".to_owned()),
-                                Err(err) => (StatusCode::INTERNAL_SERVER_ERROR, format!("{}", err)),
+                                Err(error) => {
+                                    (StatusCode::INTERNAL_SERVER_ERROR, format!("{}", error))
+                                }
                             }
                         } else {
                             (

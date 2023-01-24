@@ -16,7 +16,7 @@ self.addEventListener("push", async (event) => {
       body: data.body,
     };
     await self.registration.showNotification(data.title, options);
-  } catch (err) {
-    console.log(err);
+  } catch (error) {
+    console.log(error);
   }
 });
