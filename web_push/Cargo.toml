@@ -9,6 +9,7 @@ license = "MIT OR Apache-2.0"
 name = "web-push-native"
 readme = "README.md"
 repository = "https://github.com/leotaku/web-push-native"
+rust-version = "1.60.0"
 version = "0.1.2"
 
 [lib]
