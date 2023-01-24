@@ -17,7 +17,7 @@ macro_rules! DECODE {
 }
 
 #[test]
-fn test_encrypt_decrypt() {
+fn test_encryption_decryption() {
     let vapid_pair = jwt_simple::algorithms::ES256KeyPair::generate();
     let ece_secret = p256::SecretKey::random(&mut OsRng);
     let mut auth = vec![0u8; 16];
@@ -38,7 +38,7 @@ fn test_encrypt_decrypt() {
 }
 
 #[test]
-fn test_encrypt_decrypt_with_serialization() {
+fn test_encryption_decryption_with_serialization() {
     let vapid_pair = jwt_simple::algorithms::ES256KeyPair::generate();
     let ece_secret = p256::SecretKey::random(&mut OsRng);
     let mut auth = vec![0u8; 16];
@@ -96,7 +96,7 @@ mod rfc8291_example {
     const SHARED: Lazy<[u8; 32]> = DECODE!("kyrL1jIIOHEzg3sM2ZWRHDRB62YACZhhSlknJ672kSs");
 
     #[test]
-    fn test_derive_ikm() {
+    fn test_ikm_derivation() {
         let shared =
             p256::ecdh::diffie_hellman(AS_PRIVATE.to_nonzero_scalar(), UA_PUBLIC.as_affine());
         assert_eq!(shared.raw_secret_bytes().as_slice(), &*SHARED);
@@ -106,7 +106,7 @@ mod rfc8291_example {
     }
 
     #[test]
-    fn test_encrypt() {
+    fn test_encryption() {
         let ciphertext =
             encrypt_predictably(*SALT, PLAINTEXT.to_vec(), &AS_PRIVATE, &UA_PUBLIC, &AUTH).unwrap();
 
@@ -114,7 +114,7 @@ mod rfc8291_example {
     }
 
     #[test]
-    fn test_encrypt_decrypt() {
+    fn test_encryption_decryption() {
         let ciphertext =
             encrypt_predictably(*SALT, PLAINTEXT.to_vec(), &AS_PRIVATE, &UA_PUBLIC, &AUTH).unwrap();
 
