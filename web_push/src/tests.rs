@@ -75,7 +75,7 @@ mod rfc8291_example {
         "BTBZMqHH6r4Tts7J_aSIgg"
     );
     const UA_PRIVATE: Lazy<p256::SecretKey> = DECODE!(
-        p256::SecretKey::from_be_bytes,
+        p256::SecretKey::from_slice,
         "q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94"
     );
     const UA_PUBLIC: Lazy<p256::PublicKey> = DECODE!(
@@ -83,7 +83,7 @@ mod rfc8291_example {
         "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4"
     );
     const AS_PRIVATE: Lazy<p256::SecretKey> = DECODE!(
-        p256::SecretKey::from_be_bytes,
+        p256::SecretKey::from_slice,
         "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw"
     );
     const AS_PUBLIC: Lazy<p256::PublicKey> = DECODE!(
