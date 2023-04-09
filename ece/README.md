@@ -1,4 +1,4 @@
-# ece
+# ece-native
 
 [![Crates.io](https://img.shields.io/crates/v/ece-native)](https://crates.io/crates/ece-native)
 [![Lib.rs](https://img.shields.io/badge/lib.rs-linked-informational)](https://lib.rs/crates/ece-native)

@@ -1,4 +1,4 @@
-# web-push
+# web-push-native
 
 [![Crates.io](https://img.shields.io/crates/v/web-push-native)](https://crates.io/crates/web-push-native)
 [![Lib.rs](https://img.shields.io/badge/lib.rs-linked-informational)](https://lib.rs/crates/web-push-native)
