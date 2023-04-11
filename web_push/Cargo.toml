@@ -27,8 +27,8 @@ ece-native = { version = "0.1.3", path = "../ece" }
 hkdf = "0.12.3"
 http = "0.2.9"
 jwt-simple = { version = "0.11.4", optional = true }
-p256 = { version = "0.13.0", features = ["ecdh"] }
-serde = { version = "1.0.159", features = ["derive"], optional = true }
+p256 = { version = "0.13.1", features = ["ecdh"] }
+serde = { version = "1.0.160", features = ["derive"], optional = true }
 sha2 = "0.10.6"
 
 [dev-dependencies]
