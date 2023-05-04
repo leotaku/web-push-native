@@ -70,6 +70,7 @@ use std::time::Duration;
 /// Error type for HTTP push failure modes
 #[derive(Debug)]
 pub enum Error {
+    PrefixLengthInvalid,
     ECE(ece_native::Error),
     Extension(Box<dyn std::error::Error>),
 }
@@ -235,17 +236,22 @@ pub fn decrypt(
     encrypted_message: Vec<u8>,
     as_secret: &p256::SecretKey,
     ua_auth: &Auth,
-) -> Result<Vec<u8>, ece_native::Error> {
+) -> Result<Vec<u8>, Error> {
+    if encrypted_message.len() < 21 {
+        return Err(Error::PrefixLengthInvalid);
+    }
+
     let idlen = encrypted_message[20];
     let keyid = &encrypted_message[21..21 + usize::from(idlen)];
 
-    let ua_public =
-        p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::Aes128Gcm)?;
+    let ua_public = p256::PublicKey::from_sec1_bytes(keyid)
+        .map_err(|_| ece_native::Error::Aes128Gcm)
+        .map_err(Error::ECE)?;
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
     let ikm = compute_ikm(ua_auth, &shared, &as_secret.public_key(), &ua_public);
 
-    ece_native::decrypt(ikm, encrypted_message)
+    ece_native::decrypt(ikm, encrypted_message).map_err(Error::ECE)
 }
 
 fn compute_ikm(
