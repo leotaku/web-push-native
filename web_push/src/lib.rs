@@ -171,7 +171,7 @@ impl<A: AddHeaders> WebPushBuilder<A> {
     pub fn build<T: Into<Vec<u8>>>(&self, body: T) -> Result<Request<Vec<u8>>, Error> {
         let body = body.into();
 
-        let payload = encrypt(body, &self.ua_public, &self.ua_auth).map_err(Error::ECE)?;
+        let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
         let builder = Request::builder()
             .uri(self.endpoint.clone())
             .method(http::method::Method::POST)
@@ -194,11 +194,11 @@ pub fn encrypt(
     message: Vec<u8>,
     ua_public: &p256::PublicKey,
     ua_auth: &Auth,
-) -> Result<Vec<u8>, ece_native::Error> {
+) -> Result<Vec<u8>, Error> {
     let mut salt = [0u8; 16];
     OsRng.fill_bytes(&mut salt);
     let as_secret = p256::SecretKey::random(&mut OsRng);
-    encrypt_predictably(salt, message, &as_secret, ua_public, ua_auth)
+    encrypt_predictably(salt, message, &as_secret, ua_public, ua_auth).map_err(Error::ECE)
 }
 
 fn encrypt_predictably(
