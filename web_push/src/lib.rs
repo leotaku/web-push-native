@@ -67,8 +67,9 @@ use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 use std::time::Duration;
 
-/// Opaque error type for HTTP push failure modes
-pub type Error = Box<dyn std::error::Error>;
+mod error;
+
+pub use error::{Error, Result};
 
 /// HTTP push authentication secret
 pub type Auth = GenericArray<u8, U16>;
@@ -132,14 +133,14 @@ pub trait AddHeaders: Sized {
     fn add_headers(
         this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error>;
+    ) -> Result<http::request::Builder>;
 }
 
 impl AddHeaders for () {
     fn add_headers(
         _this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error> {
+    ) -> Result<http::request::Builder> {
         Ok(builder)
     }
 }
@@ -147,7 +148,7 @@ impl AddHeaders for () {
 impl<A: AddHeaders> WebPushBuilder<A> {
     /// Generates a new HTTP push request according to the
     /// specifications of the builder.
-    pub fn build<T: Into<Vec<u8>>>(&self, body: T) -> Result<Request<Vec<u8>>, Error> {
+    pub fn build<T: Into<Vec<u8>>>(&self, body: T) -> Result<Request<Vec<u8>>> {
         let body = body.into();
 
         let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
@@ -170,7 +171,7 @@ pub fn encrypt(
     message: Vec<u8>,
     ua_public: &p256::PublicKey,
     ua_auth: &Auth,
-) -> Result<Vec<u8>, ece_native::Error> {
+) -> ece_native::Result<Vec<u8>> {
     let mut salt = [0u8; 16];
     OsRng.fill_bytes(&mut salt);
     let as_secret = p256::SecretKey::random(&mut OsRng);
@@ -183,7 +184,7 @@ fn encrypt_predictably(
     as_secret: &p256::SecretKey,
     ua_public: &p256::PublicKey,
     ua_auth: &Auth,
-) -> Result<Vec<u8>, ece_native::Error> {
+) -> ece_native::Result<Vec<u8>> {
     let as_public = as_secret.public_key();
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
@@ -212,7 +213,7 @@ pub fn decrypt(
     encrypted_message: Vec<u8>,
     as_secret: &p256::SecretKey,
     ua_auth: &Auth,
-) -> Result<Vec<u8>, ece_native::Error> {
+) -> ece_native::Result<Vec<u8>> {
     let idlen = encrypted_message[20];
     let keyid = &encrypted_message[21..21 + (idlen as usize)];
 

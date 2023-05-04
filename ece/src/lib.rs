@@ -11,6 +11,9 @@ use aes_gcm::{
 use hkdf::Hkdf;
 use sha2::Sha256;
 
+/// Result with this crate's error.
+pub type Result<T> = std::result::Result<T, Error>;
+
 /// Error modes for RFC8188 encryption and decryption
 #[derive(Debug)]
 pub enum Error {
@@ -62,7 +65,7 @@ fn generate_encryption_header<KI: AsRef<[u8]>>(
     salt: [u8; 16],
     record_size: u32,
     keyid: KI,
-) -> Result<Vec<u8>, Error> {
+) -> Result<Vec<u8>> {
     let mut header = Vec::new();
     header.extend_from_slice(&salt[..]);
     header.extend_from_slice(&record_size.to_be_bytes());
@@ -84,7 +87,7 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
     mut record: B,
     encrypted_record_size: u32,
     is_last: bool,
-) -> Result<B, Error> {
+) -> Result<B> {
     let plain_record_size: u32 = record
         .len()
         .try_into()
@@ -122,7 +125,7 @@ pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
     keyid: KI,
     records: R,
     encrypted_record_size: u32,
-) -> Result<Vec<u8>, Error> {
+) -> Result<Vec<u8>> {
     let header = generate_encryption_header(salt, encrypted_record_size, keyid.as_ref())?;
 
     let records = records.enumerate().map(|(n, record)| {
@@ -151,7 +154,7 @@ fn decrypt_record<'a>(
     nonce: &Nonce<U12>,
     record: &'a mut [u8],
     is_last: bool,
-) -> Result<&'a [u8], Error> {
+) -> Result<&'a [u8]> {
     if record.len() < <Aes128Gcm as aes_gcm::AeadCore>::TagSize::to_usize() {
         return Err(Error::RecordLengthInvalid);
     }
@@ -175,10 +178,7 @@ fn decrypt_record<'a>(
 }
 
 /// Low-level RFC8188 ece decryption routine
-pub fn decrypt<IKM: AsRef<[u8]>>(
-    ikm: IKM,
-    mut encrypted_message: Vec<u8>,
-) -> Result<Vec<u8>, Error> {
+pub fn decrypt<IKM: AsRef<[u8]>>(ikm: IKM, mut encrypted_message: Vec<u8>) -> Result<Vec<u8>> {
     if encrypted_message.len() < 21 {
         return Err(Error::HeaderLengthInvalid);
     }
