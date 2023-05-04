@@ -214,7 +214,7 @@ pub fn decrypt(
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, ece_native::Error> {
     let idlen = encrypted_message[20];
-    let keyid = &encrypted_message[21..21 + (idlen as usize)];
+    let keyid = &encrypted_message[21..21 + usize::from(idlen)];
 
     let ua_public =
         p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::Aes128Gcm)?;

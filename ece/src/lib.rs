@@ -186,7 +186,7 @@ pub fn decrypt<IKM: AsRef<[u8]>>(
     let (header, keyid_and_records) = encrypted_message.split_at_mut(21);
     let salt = header[..16].try_into().unwrap();
     let encrypted_record_size = u32::from_be_bytes(header[16..16 + 4].try_into().unwrap());
-    let idlen = header[20] as usize;
+    let idlen = header[20].into();
 
     if keyid_and_records.len() < idlen {
         return Err(Error::KeyIdLengthInvalid);
