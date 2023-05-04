@@ -32,7 +32,7 @@
 //! // source tree in real projects!
 //! const VAPID: &str = "";
 //!
-//! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Error> {
+//! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Box<dyn std::error::Error>> {
 //!     let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID)?)?;
 //!     let builder = WebPushBuilder::new(
 //!         ENDPOINT.parse()?,
@@ -41,7 +41,7 @@
 //!     )
 //!     .with_vapid(&key_pair, "mailto:john.doe@example.com");
 //!
-//!     builder.build(content)
+//!     Ok(builder.build(content)?)
 //! }
 //! ```
 
@@ -67,8 +67,24 @@ use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 use std::time::Duration;
 
-/// Opaque error type for HTTP push failure modes
-pub type Error = Box<dyn std::error::Error>;
+/// Error type for HTTP push failure modes
+#[derive(Debug)]
+pub enum Error {
+    ECE(ece_native::Error),
+    Extension(Box<dyn std::error::Error>),
+}
+
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::PrefixLengthInvalid => write!(f, "invalid prefix length"),
+            Error::ECE(ece) => write!(f, "ece: {}", ece),
+            Error::Extension(ext) => write!(f, "extension: {}", ext),
+        }
+    }
+}
 
 /// HTTP push authentication secret
 pub type Auth = GenericArray<u8, U16>;
@@ -129,17 +145,21 @@ impl WebPushBuilder {
 
 #[doc(hidden)]
 pub trait AddHeaders: Sized {
+    type Error: Into<Box<dyn std::error::Error>>;
+
     fn add_headers(
         this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error>;
+    ) -> Result<http::request::Builder, Self::Error>;
 }
 
 impl AddHeaders for () {
+    type Error = std::convert::Infallible;
+
     fn add_headers(
         _this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error> {
+    ) -> Result<http::request::Builder, Self::Error> {
         Ok(builder)
     }
 }
@@ -150,7 +170,7 @@ impl<A: AddHeaders> WebPushBuilder<A> {
     pub fn build<T: Into<Vec<u8>>>(&self, body: T) -> Result<Request<Vec<u8>>, Error> {
         let body = body.into();
 
-        let payload = encrypt(body, &self.ua_public, &self.ua_auth)?;
+        let payload = encrypt(body, &self.ua_public, &self.ua_auth).map_err(Error::ECE)?;
         let builder = Request::builder()
             .uri(self.endpoint.clone())
             .method(http::method::Method::POST)
@@ -159,9 +179,12 @@ impl<A: AddHeaders> WebPushBuilder<A> {
             .header(header::CONTENT_TYPE, "application/octet-stream")
             .header(header::CONTENT_LENGTH, payload.len());
 
-        let builder = AddHeaders::add_headers(self, builder)?;
+        let builder =
+            AddHeaders::add_headers(self, builder).map_err(|it| Error::Extension(it.into()))?;
 
-        Ok(builder.body(payload)?)
+        Ok(builder
+            .body(payload)
+            .expect("builder arguments are always well-defined"))
     }
 }
 
