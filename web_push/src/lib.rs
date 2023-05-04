@@ -70,8 +70,11 @@ use std::time::Duration;
 /// Error type for HTTP push failure modes
 #[derive(Debug)]
 pub enum Error {
+    /// Key prefix of the encrypted message was too short
     PrefixLengthInvalid,
+    /// Internal ECE error
     ECE(ece_native::Error),
+    /// Internal error coming from an http auth provider
     Extension(Box<dyn std::error::Error>),
 }
 
