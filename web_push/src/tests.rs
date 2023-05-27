@@ -22,7 +22,7 @@ fn test_encryption_decryption() {
     let ece_secret = p256::SecretKey::random(&mut OsRng);
     let mut auth = vec![0u8; 16];
     OsRng.fill_bytes(&mut auth);
-    let auth = GenericArray::clone_from_slice(&auth);
+    let auth = Auth::clone_from_slice(&auth);
 
     let builder = WebPushBuilder::new(
         "https://example.com/".parse().unwrap(),
@@ -43,7 +43,7 @@ fn test_encryption_decryption_with_serialization() {
     let ece_secret = p256::SecretKey::random(&mut OsRng);
     let mut auth = vec![0u8; 16];
     OsRng.fill_bytes(&mut auth);
-    let auth = GenericArray::clone_from_slice(&auth);
+    let auth = Auth::clone_from_slice(&auth);
 
     let json = serde_json::json!({
        "endpoint": "https://example.com/",
@@ -62,6 +62,27 @@ fn test_encryption_decryption_with_serialization() {
     let ciphertext = builder.build(plaintext.clone()).unwrap().into_body();
     let decrypted = decrypt(ciphertext, &ece_secret, &auth).unwrap();
     assert_eq!(decrypted, plaintext);
+}
+
+#[test]
+fn test_deserialize_owned() -> Result<(), jwt_simple::Error> {
+    let ece_secret = p256::SecretKey::random(&mut OsRng);
+    let mut auth = vec![0u8; 16];
+    OsRng.fill_bytes(&mut auth);
+    let auth = Auth::clone_from_slice(&auth);
+
+    let json = serde_json::json!({
+       "endpoint": "https://example.com/",
+       "expirationTime": (),
+       "keys": {
+           "auth": Base64UrlUnpadded::encode_string(&auth),
+           "p256dh": Base64UrlUnpadded::encode_string(&ece_secret.public_key().to_encoded_point(false).to_bytes()),
+      }
+    });
+
+    serde_json::from_value::<WebPushBuilder>(json)?;
+
+    Ok(())
 }
 
 mod rfc8291_example {

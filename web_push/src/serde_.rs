@@ -27,7 +27,7 @@ fn url_to_string<U: AsRef<Uri>, S: Serializer>(url: U, s: S) -> Result<S::Ok, S:
 }
 
 fn string_to_url<'de, D: Deserializer<'de>>(d: D) -> Result<Cow<'static, Uri>, D::Error> {
-    let s: &str = Deserialize::deserialize(d)?;
+    let s: Cow<str> = Deserialize::deserialize(d)?;
     s.parse().map(Cow::Owned).map_err(de::Error::custom)
 }
 
@@ -36,9 +36,9 @@ fn auth_to_bytes<S: Serializer>(auth: &Auth, s: S) -> Result<S::Ok, S::Error> {
 }
 
 fn bytes_to_auth<'de, D: Deserializer<'de>>(d: D) -> Result<Auth, D::Error> {
-    let b64: &str = Deserialize::deserialize(d)?;
+    let b64: Cow<str> = Deserialize::deserialize(d)?;
     Ok(Auth::clone_from_slice(
-        &Base64UrlUnpadded::decode_vec(b64).map_err(de::Error::custom)?,
+        &Base64UrlUnpadded::decode_vec(&b64).map_err(de::Error::custom)?,
     ))
 }
 
@@ -49,9 +49,9 @@ fn p256_to_bytes<S: Serializer>(auth: &p256::PublicKey, s: S) -> Result<S::Ok, S
 }
 
 fn bytes_to_p256<'de, D: Deserializer<'de>>(d: D) -> Result<p256::PublicKey, D::Error> {
-    let b64: &str = Deserialize::deserialize(d)?;
+    let b64: Cow<str> = Deserialize::deserialize(d)?;
     p256::PublicKey::from_sec1_bytes(
-        &Base64UrlUnpadded::decode_vec(b64).map_err(de::Error::custom)?,
+        &Base64UrlUnpadded::decode_vec(&b64).map_err(de::Error::custom)?,
     )
     .map_err(de::Error::custom)
 }
