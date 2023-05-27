@@ -75,7 +75,7 @@ pub enum Error {
     /// Internal ECE error
     ECE(ece_native::Error),
     /// Internal error coming from an http auth provider
-    Extension(Box<dyn std::error::Error>),
+    Extension(Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
 impl std::error::Error for Error {}
@@ -149,7 +149,7 @@ impl WebPushBuilder {
 
 #[doc(hidden)]
 pub trait AddHeaders: Sized {
-    type Error: Into<Box<dyn std::error::Error>>;
+    type Error: Into<Box<dyn std::error::Error + Sync + Send + 'static>>;
 
     fn add_headers(
         this: &WebPushBuilder<Self>,
