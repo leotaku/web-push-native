@@ -75,7 +75,8 @@ pub enum Error {
     /// Internal ECE error
     ECE(ece_native::Error),
     /// Internal error coming from an http auth provider
-    Extension(Box<dyn std::error::Error>),
+    #[cfg(feature = "vapid")]
+    Extension(jwt_simple::Error),
 }
 
 impl std::error::Error for Error {}
@@ -85,6 +86,7 @@ impl std::fmt::Display for Error {
         match self {
             Error::PrefixLengthInvalid => write!(f, "invalid prefix length"),
             Error::ECE(ece) => write!(f, "ece: {}", ece),
+            #[cfg(feature = "vapid")]
             Error::Extension(ext) => write!(f, "extension: {}", ext),
         }
     }
@@ -148,8 +150,9 @@ impl WebPushBuilder {
 }
 
 #[doc(hidden)]
+#[cfg(feature = "vapid")]
 pub trait AddHeaders: Sized {
-    type Error: Into<Box<dyn std::error::Error>>;
+    type Error: Into<jwt_simple::Error>;
 
     fn add_headers(
         this: &WebPushBuilder<Self>,
@@ -157,6 +160,7 @@ pub trait AddHeaders: Sized {
     ) -> Result<http::request::Builder, Self::Error>;
 }
 
+#[cfg(feature = "vapid")]
 impl AddHeaders for () {
     type Error = std::convert::Infallible;
 
@@ -167,6 +171,11 @@ impl AddHeaders for () {
         Ok(builder)
     }
 }
+
+// Just to get the `impl<A: AddHeaders> WebPushBuilder<A>` to build without the vapid feature
+#[doc(hidden)]
+#[cfg(not(feature = "vapid"))]
+pub trait AddHeaders: Sized {}
 
 impl<A: AddHeaders> WebPushBuilder<A> {
     /// Generates a new HTTP push request according to the
@@ -183,6 +192,7 @@ impl<A: AddHeaders> WebPushBuilder<A> {
             .header(header::CONTENT_TYPE, "application/octet-stream")
             .header(header::CONTENT_LENGTH, payload.len());
 
+        #[cfg(feature = "vapid")]
         let builder =
             AddHeaders::add_headers(self, builder).map_err(|it| Error::Extension(it.into()))?;
 
