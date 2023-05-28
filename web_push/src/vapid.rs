@@ -1,4 +1,4 @@
-use super::{AddHeaders, Error, WebPushBuilder};
+use super::{AddHeaders, WebPushBuilder};
 use base64ct::{Base64UrlUnpadded, Encoding};
 use http::{header, Uri};
 use jwt_simple::{
@@ -19,10 +19,12 @@ impl<'a> VapidAuthorization<'a> {
 }
 
 impl<'a> AddHeaders for VapidAuthorization<'a> {
+    type Error = jwt_simple::Error;
+
     fn add_headers(
         this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error> {
+    ) -> Result<http::request::Builder, Self::Error> {
         let vapid = VapidSignature::sign(
             &this.endpoint,
             this.valid_duration,
@@ -47,12 +49,16 @@ impl VapidSignature {
         valid_duration: Duration,
         contact: T,
         key: &ES256KeyPair,
-    ) -> Result<VapidSignature, Error> {
+    ) -> Result<VapidSignature, jwt_simple::Error> {
         let claims = Claims::create(valid_duration.into())
             .with_audience(format!(
                 "{}://{}",
-                endpoint.scheme_str().ok_or("missing scheme in endpoint")?,
-                endpoint.host().ok_or("missing host in endpoint")?
+                endpoint
+                    .scheme_str()
+                    .ok_or(jwt_simple::Error::msg("missing scheme in endpoint"))?,
+                endpoint
+                    .host()
+                    .ok_or(jwt_simple::Error::msg("missing host in endpoint"))?
             ))
             .with_subject(contact);
 

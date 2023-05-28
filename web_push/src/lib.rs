@@ -32,7 +32,7 @@
 //! // source tree in real projects!
 //! const VAPID: &str = "";
 //!
-//! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Error> {
+//! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Box<dyn std::error::Error>> {
 //!     let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID)?)?;
 //!     let builder = WebPushBuilder::new(
 //!         ENDPOINT.parse()?,
@@ -41,7 +41,7 @@
 //!     )
 //!     .with_vapid(&key_pair, "mailto:john.doe@example.com");
 //!
-//!     builder.build(content)
+//!     Ok(builder.build(content)?)
 //! }
 //! ```
 
@@ -67,8 +67,28 @@ use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 use std::time::Duration;
 
-/// Opaque error type for HTTP push failure modes
-pub type Error = Box<dyn std::error::Error>;
+/// Error type for HTTP push failure modes
+#[derive(Debug)]
+pub enum Error {
+    /// Key prefix of the encrypted message was too short
+    PrefixLengthInvalid,
+    /// Internal ECE error
+    ECE(ece_native::Error),
+    /// Internal error coming from an http auth provider
+    Extension(Box<dyn std::error::Error + Send + Sync + 'static>),
+}
+
+impl std::error::Error for Error {}
+
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::PrefixLengthInvalid => write!(f, "invalid prefix length"),
+            Error::ECE(ece) => write!(f, "ece: {}", ece),
+            Error::Extension(ext) => write!(f, "extension: {}", ext),
+        }
+    }
+}
 
 /// HTTP push authentication secret
 pub type Auth = GenericArray<u8, U16>;
@@ -129,17 +149,21 @@ impl WebPushBuilder {
 
 #[doc(hidden)]
 pub trait AddHeaders: Sized {
+    type Error: Into<Box<dyn std::error::Error + Sync + Send + 'static>>;
+
     fn add_headers(
         this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error>;
+    ) -> Result<http::request::Builder, Self::Error>;
 }
 
 impl AddHeaders for () {
+    type Error = std::convert::Infallible;
+
     fn add_headers(
         _this: &WebPushBuilder<Self>,
         builder: http::request::Builder,
-    ) -> Result<http::request::Builder, Error> {
+    ) -> Result<http::request::Builder, Self::Error> {
         Ok(builder)
     }
 }
@@ -159,9 +183,12 @@ impl<A: AddHeaders> WebPushBuilder<A> {
             .header(header::CONTENT_TYPE, "application/octet-stream")
             .header(header::CONTENT_LENGTH, payload.len());
 
-        let builder = AddHeaders::add_headers(self, builder)?;
+        let builder =
+            AddHeaders::add_headers(self, builder).map_err(|it| Error::Extension(it.into()))?;
 
-        Ok(builder.body(payload)?)
+        Ok(builder
+            .body(payload)
+            .expect("builder arguments are always well-defined"))
     }
 }
 
@@ -170,11 +197,11 @@ pub fn encrypt(
     message: Vec<u8>,
     ua_public: &p256::PublicKey,
     ua_auth: &Auth,
-) -> Result<Vec<u8>, ece_native::Error> {
+) -> Result<Vec<u8>, Error> {
     let mut salt = [0u8; 16];
     OsRng.fill_bytes(&mut salt);
     let as_secret = p256::SecretKey::random(&mut OsRng);
-    encrypt_predictably(salt, message, &as_secret, ua_public, ua_auth)
+    encrypt_predictably(salt, message, &as_secret, ua_public, ua_auth).map_err(Error::ECE)
 }
 
 fn encrypt_predictably(
@@ -212,17 +239,22 @@ pub fn decrypt(
     encrypted_message: Vec<u8>,
     as_secret: &p256::SecretKey,
     ua_auth: &Auth,
-) -> Result<Vec<u8>, ece_native::Error> {
+) -> Result<Vec<u8>, Error> {
+    if encrypted_message.len() < 21 {
+        return Err(Error::PrefixLengthInvalid);
+    }
+
     let idlen = encrypted_message[20];
     let keyid = &encrypted_message[21..21 + usize::from(idlen)];
 
-    let ua_public =
-        p256::PublicKey::from_sec1_bytes(keyid).map_err(|_| ece_native::Error::Aes128Gcm)?;
+    let ua_public = p256::PublicKey::from_sec1_bytes(keyid)
+        .map_err(|_| ece_native::Error::Aes128Gcm)
+        .map_err(Error::ECE)?;
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
     let ikm = compute_ikm(ua_auth, &shared, &as_secret.public_key(), &ua_public);
 
-    ece_native::decrypt(ikm, encrypted_message)
+    ece_native::decrypt(ikm, encrypted_message).map_err(Error::ECE)
 }
 
 fn compute_ikm(
