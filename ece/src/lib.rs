@@ -104,7 +104,7 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
             .extend_from_slice(b"\x01")
             .map_err(|_| Error::Aes128Gcm)?;
         record
-            .extend_from_slice(&b"\x00".repeat((pad_len - 1).try_into().unwrap())[..])
+            .extend_from_slice(&b"\x00".repeat((pad_len - 1).try_into().unwrap()))
             .map_err(|_| Error::Aes128Gcm)?;
     }
 
