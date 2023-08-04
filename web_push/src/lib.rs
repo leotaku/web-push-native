@@ -215,7 +215,7 @@ fn encrypt_predictably(
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
     let ikm = compute_ikm(
-        ua_auth.as_slice().try_into().unwrap(),
+        ua_auth,
         &shared,
         ua_public,
         &as_public,
