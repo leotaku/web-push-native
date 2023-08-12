@@ -75,6 +75,6 @@ impl From<VapidSignature> for http::HeaderValue {
             &signature.public_key.public_key().to_bytes_uncompressed(),
         );
         let value = format!("vapid t={}, k={}", signature.token, encoded_public);
-        Self::try_from(value).unwrap()
+        Self::try_from(value).expect("given string is always a valid header value")
     }
 }

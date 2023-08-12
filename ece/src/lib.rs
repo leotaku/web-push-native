@@ -104,7 +104,13 @@ fn encrypt_record<B: aes_gcm::aead::Buffer>(
             .extend_from_slice(b"\x01")
             .map_err(|_| Error::Aes128Gcm)?;
         record
-            .extend_from_slice(&b"\x00".repeat((pad_len - 1).try_into().unwrap()))
+            .extend_from_slice(
+                &b"\x00".repeat(
+                    (pad_len - 1).try_into().expect(
+                        "padding length is between 0 and 15 which will always fit into usize",
+                    ),
+                ),
+            )
             .map_err(|_| Error::Aes128Gcm)?;
     }
 
@@ -184,8 +190,12 @@ pub fn decrypt<IKM: AsRef<[u8]>>(
     }
 
     let (header, keyid_and_records) = encrypted_message.split_at_mut(21);
-    let salt = header[..16].try_into().unwrap();
-    let encrypted_record_size = u32::from_be_bytes(header[16..16 + 4].try_into().unwrap());
+    let salt = header[..16].try_into().expect(
+        "casting a slice of fixed length to an array of the same length will always succeed",
+    );
+    let encrypted_record_size = u32::from_be_bytes(header[16..16 + 4].try_into().expect(
+        "casting a slice of fixed length to an array of the same length will always succeed",
+    ));
     let idlen = header[20].into();
 
     if keyid_and_records.len() < idlen {
