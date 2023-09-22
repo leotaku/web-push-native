@@ -68,4 +68,5 @@ async function main() {
   }
 }
 
+document.querySelector("#retry").addEventListener("click", main);
 main();

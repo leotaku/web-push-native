@@ -8,12 +8,22 @@
   <body>
     <section>
       <b>Variables:</b>
-      <pre id="details">{}</pre>
-      <pre id="state">no errors :)</pre>
+      <p>
+        <pre id="details">{}</pre>
+        <pre id="state">no errors :)</pre>
+      </p>
     </section>
     <section>
       <b>Use something like the following command to send a notification:</b>
-      <pre>curl http://localhost:3030/api/message --json '{ "title": "Hello World!", "body": "Sent using cURL" }'</pre>
+      <p>
+        <pre>curl http://localhost:3030/api/message --json '{ "title": "Hello World!", "body": "Sent using cURL" }'</pre>
+      </p>
+    </section>
+    <section>
+      <b>Troubleshooting:</b>
+      <p>
+        <button id="retry">Retry permission request & setup</button>
+      </p>
     </section>
     <script type="module" src="/index.js"></script>
   </body>
