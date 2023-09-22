@@ -214,12 +214,7 @@ fn encrypt_predictably(
     let as_public = as_secret.public_key();
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
-    let ikm = compute_ikm(
-        ua_auth,
-        &shared,
-        ua_public,
-        &as_public,
-    );
+    let ikm = compute_ikm(ua_auth, &shared, ua_public, &as_public);
     let keyid = as_public.as_affine().to_encoded_point(false);
     let encrypted_record_length = (message.len() + 17)
         .try_into()
