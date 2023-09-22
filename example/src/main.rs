@@ -139,14 +139,14 @@ fn static_routes() -> Router {
             }),
         )
         .route(
-            "/sw.js",
+            "/service-worker.js",
             get(|| async {
                 (
                     [(
                         header::CONTENT_TYPE,
                         HeaderValue::from_static("application/javascript"),
                     )],
-                    include_str!("../assets/sw.js"),
+                    include_str!("../assets/service-worker.js"),
                 )
             }),
         )

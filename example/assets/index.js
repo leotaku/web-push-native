@@ -20,7 +20,7 @@ async function fetchVapidKeys() {
 
 /** @param {VapidKeys} vapidKeys */
 async function subscribeUserToPush(vapidKeys) {
-  const registration = await navigator.serviceWorker.register("sw.js");
+  const registration = await navigator.serviceWorker.register("service-worker.js");
   registration.update();
   const pushSubscription = await registration.pushManager.subscribe({
     userVisibleOnly: true,
