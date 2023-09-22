@@ -13,7 +13,7 @@ rust-version = "1.60.0"
 version = "0.2.0"
 
 [dependencies]
-aes-gcm = "0.10.2"
+aes-gcm = "0.10.3"
 hkdf = "0.12.3"
 sha2 = "0.10.7"
 
