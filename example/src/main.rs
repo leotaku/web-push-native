@@ -57,9 +57,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/api", api_routes())
         .layer(LiveReloadLayer::new());
 
-    Server::bind(&"0.0.0.0:3030".parse()?)
-        .serve(app.into_make_service())
-        .await?;
+    let addr = &"127.0.0.1:3030".parse()?;
+    eprintln!("http://{}", addr);
+
+    Server::bind(addr).serve(app.into_make_service()).await?;
 
     Ok(())
 }
