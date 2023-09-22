@@ -83,7 +83,7 @@ fn api_routes() -> Router {
         .route(
             "/register",
             post(
-                |axum::extract::State(state): axum::extract::State<SharedState>,
+                |extract::State(state): extract::State<SharedState>,
                  extract::Json(builder): extract::Json<WebPushBuilder>| {
                     if let Ok(ref mut state) = state.try_write() {
                         state.builder = Some(builder)
@@ -95,7 +95,7 @@ fn api_routes() -> Router {
         .route(
             "/message",
             post(
-                |axum::extract::State(state): axum::extract::State<SharedState>,
+                |extract::State(state): extract::State<SharedState>,
                  extract::Json(message): extract::Json<serde_json::Value>| {
                     let maybe = state.read().ok().and_then(|it| it.builder.clone());
                     async {
