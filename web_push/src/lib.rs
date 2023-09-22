@@ -4,16 +4,18 @@
 //! # Example
 //!
 //! This example shows how to use the [`WebPushBuilder`] to create a HTTP push
-//! request to one, hard-coded client.
+//! request to a single hard-coded client.
 //!
-//! In most cases, you will need to implement some form of state management to
-//! send messages to all of your clients. You are expected to create one
+//! For most projects you will need to implement some form of state management
+//! to send messages to all of your clients. You are expected to create one
 //! [`WebPushBuilder`] for each client you want to send messages to, but can
-//! reuse the same builder for multiple push requests to the same
-//! client.
+//! reuse the same builder for multiple push requests to the same client.
 //!
-//! Please see the [`/example`](https://github.com/leotaku/web-push-native/tree/master/example)
-//! directory on GitHub for a more fully-featured example.
+//! Please see the
+//! [`/example`](https://github.com/leotaku/web-push-native/tree/master/example)
+//! directory on GitHub for a more fully-featured example which presents how to
+//! setup an [`axum`] web server in combination with this library to expose a
+//! simple HTTP API for sending web-push notifications.
 //!
 //! ```
 //! use base64ct::{Base64UrlUnpadded, Encoding};
@@ -22,8 +24,8 @@
 //! };
 //!
 //! // Placeholders for variables provided by individual clients. In most cases,
-//! // these will be retrieved in-browser using `pushManager.subscribe` on a service
-//! // worker registration object.
+//! // these will be retrieved in-browser by calling `pushManager.subscribe` on
+//! // a service worker registration object.
 //! const ENDPOINT: &str = "";
 //! const P256DH: &str = "";
 //! const AUTH: &str = "";
@@ -44,6 +46,8 @@
 //!     Ok(builder.build(content)?)
 //! }
 //! ```
+//!
+//! [`axum`]: https://docs.rs/axum
 
 #[cfg(feature = "serialization")]
 mod serde_;
