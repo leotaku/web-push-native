@@ -214,8 +214,8 @@ pub fn decrypt<IKM: AsRef<[u8]>>(
         .map(|(n, record)| {
             let mut seq = [0u8; 12];
             seq[4..].copy_from_slice(&n.to_be_bytes());
-            let nonce = derive_nonce(salt, ikm.as_ref(), seq);
             let key = derive_key(salt, ikm.as_ref());
+            let nonce = derive_nonce(salt, ikm.as_ref(), seq);
             (key, nonce, record)
         });
 
