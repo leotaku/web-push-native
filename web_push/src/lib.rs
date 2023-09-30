@@ -74,8 +74,6 @@ use std::time::Duration;
 /// Error type for HTTP push failure modes
 #[derive(Debug)]
 pub enum Error {
-    /// Key prefix of the encrypted message was too short
-    PrefixLengthInvalid,
     /// Internal ECE error
     ECE(ece_native::Error),
     /// Internal error coming from an http auth provider
@@ -87,7 +85,6 @@ impl std::error::Error for Error {}
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::PrefixLengthInvalid => write!(f, "invalid prefix length"),
             Error::ECE(ece) => write!(f, "ece: {}", ece),
             Error::Extension(ext) => write!(f, "extension: {}", ext),
         }
