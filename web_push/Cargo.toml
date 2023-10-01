@@ -10,7 +10,7 @@ name = "web-push-native"
 readme = "README.md"
 repository = "https://github.com/leotaku/web-push-native"
 rust-version = "1.65.0"
-version = "0.2.1"
+version = "0.3.0"
 
 [lib]
 doctest = true
@@ -23,7 +23,7 @@ vapid = ["dep:jwt-simple", "dep:base64ct"]
 [dependencies]
 aes-gcm = "0.10.3"
 base64ct = { version = "1.6.0", features = ["alloc", "std"], optional = true }
-ece-native = { version = "0.2.1", path = "../ece" }
+ece-native = { version = "0.3.0", path = "../ece" }
 hkdf = "0.12.3"
 http = "0.2.9"
 jwt-simple = { version = "0.11.7", optional = true }
