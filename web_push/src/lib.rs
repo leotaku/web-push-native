@@ -74,8 +74,6 @@ use std::time::Duration;
 /// Error type for HTTP push failure modes
 #[derive(Debug)]
 pub enum Error {
-    /// Key prefix of the encrypted message was too short
-    PrefixLengthInvalid,
     /// Internal ECE error
     ECE(ece_native::Error),
     /// Internal error coming from an http auth provider
@@ -87,7 +85,6 @@ impl std::error::Error for Error {}
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::PrefixLengthInvalid => write!(f, "invalid prefix length"),
             Error::ECE(ece) => write!(f, "ece: {}", ece),
             Error::Extension(ext) => write!(f, "extension: {}", ext),
         }
@@ -239,13 +236,7 @@ pub fn decrypt(
     as_secret: &p256::SecretKey,
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, Error> {
-    if encrypted_message.len() < 21 {
-        return Err(Error::PrefixLengthInvalid);
-    }
-
-    let idlen = encrypted_message[20];
-    let keyid = &encrypted_message[21..21 + usize::from(idlen)];
-
+    let keyid = view_keyid(&encrypted_message).map_err(Error::ECE)?;
     let ua_public = p256::PublicKey::from_sec1_bytes(keyid)
         .map_err(|_| ece_native::Error::Aes128Gcm)
         .map_err(Error::ECE)?;
@@ -274,4 +265,17 @@ fn compute_ikm(
         .expect("okm length is always 32 bytes, cannot be too large");
 
     okm
+}
+
+fn view_keyid(encrypted_message: &[u8]) -> Result<&[u8], ece_native::Error> {
+    if encrypted_message.len() < 21 {
+        return Err(ece_native::Error::HeaderLengthInvalid);
+    }
+
+    let idlen: usize = encrypted_message[20].into();
+    if encrypted_message[21..].len() < idlen {
+        return Err(ece_native::Error::KeyIdLengthInvalid);
+    }
+
+    Ok(&encrypted_message[21..21 + idlen])
 }
