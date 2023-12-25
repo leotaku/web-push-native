@@ -3,11 +3,11 @@ use axum::{
     http::HeaderValue,
     response::Html,
     routing::{get, post},
-    Json, Router, Server,
+    Json, Router,
 };
 use base64ct::{Base64UrlUnpadded, Encoding};
-use hyper::{header, Body, Client, StatusCode};
-use hyper_rustls::HttpsConnectorBuilder;
+use hyper::{header, StatusCode};
+use hyper_util::{client::legacy::Client, rt::TokioExecutor};
 use once_cell::sync::Lazy;
 use std::sync::{Arc, RwLock};
 use tower_livereload::LiveReloadLayer;
@@ -27,17 +27,13 @@ async fn push(
     message: serde_json::Value,
     builder: WebPushBuilder,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let https = HttpsConnectorBuilder::new()
-        .with_native_roots()
-        .https_only()
-        .enable_http1()
-        .build();
-    let client: Client<_, Body> = Client::builder().build(https);
+    let https = hyper_tls::HttpsConnector::new();
+    let client = Client::builder(TokioExecutor::new()).build(https);
 
     let request = builder
         .with_vapid(&VAPID_PRIVATE, "mailto:john.doe@example.com")
         .build(message.to_string())?
-        .map(|body| body.into());
+        .map(axum::body::Body::from);
 
     client.request(request).await?;
 
@@ -57,10 +53,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .nest("/api", api_routes())
         .layer(LiveReloadLayer::new());
 
-    let addr = &"127.0.0.1:3030".parse()?;
+    let addr: std::net::SocketAddr = "127.0.0.1:3030".parse()?;
     eprintln!("http://{}", addr);
 
-    Server::bind(addr).serve(app.into_make_service()).await?;
+    let listener = tokio::net::TcpListener::bind(addr).await?;
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
