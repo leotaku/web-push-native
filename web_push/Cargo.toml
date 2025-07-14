@@ -22,15 +22,15 @@ vapid = ["dep:jwt-simple", "dep:base64ct"]
 
 [dependencies]
 aes-gcm = "0.10.3"
-base64ct = { version = "1.6.0", features = ["alloc", "std"], optional = true }
+base64ct = { version = "1.7.3", features = ["alloc", "std"], optional = true }
 ece-native = { version = "0.4.0", path = "../ece" }
 hkdf = "0.12.4"
-http = "1.2.0"
-jwt-simple = { version = "0.12.11", default-features = false, features = ["pure-rust"], optional = true }
+http = "1.3.1"
+jwt-simple = { version = "0.12.12", default-features = false, features = ["pure-rust"], optional = true }
 p256 = { version = "0.13.2", features = ["ecdh"] }
-serde = { version = "1.0.217", features = ["derive"], optional = true }
-sha2 = "0.10.8"
+serde = { version = "1.0.219", features = ["derive"], optional = true }
+sha2 = "0.10.9"
 
 [dev-dependencies]
-once_cell = "1.20.2"
-serde_json = "1.0.137"
+once_cell = "1.21.3"
+serde_json = "1.0.140"
