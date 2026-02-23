@@ -36,7 +36,7 @@ impl<'a> AddHeaders for VapidAuthorization<'a> {
 }
 
 #[derive(Clone, Debug)]
-struct VapidSignature {
+pub struct VapidSignature {
     token: String,
     public_key: ES256PublicKey,
 }
@@ -44,7 +44,7 @@ struct VapidSignature {
 impl VapidSignature {
     /// Creates and signs a new [`VapidSignature`] which can be used
     /// as a HTTP header value.
-    fn sign<T: ToString>(
+    pub fn sign<T: ToString>(
         endpoint: &Uri,
         valid_duration: Duration,
         contact: T,
