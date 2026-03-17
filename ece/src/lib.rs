@@ -133,7 +133,7 @@ pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
 
     let records = records.enumerate().map(|(n, record)| {
         let mut seq = [0u8; 12];
-        seq[4..].copy_from_slice(&n.to_be_bytes());
+        seq[4..].copy_from_slice(&(n as u64).to_be_bytes());
         let key = derive_key(salt, ikm.as_ref());
         let nonce = derive_nonce(salt, ikm.as_ref(), seq);
         (key, nonce, record)
@@ -213,7 +213,7 @@ pub fn decrypt<IKM: AsRef<[u8]>>(
         .enumerate()
         .map(|(n, record)| {
             let mut seq = [0u8; 12];
-            seq[4..].copy_from_slice(&n.to_be_bytes());
+            seq[4..].copy_from_slice(&(n as u64).to_be_bytes());
             let key = derive_key(salt, ikm.as_ref());
             let nonce = derive_nonce(salt, ikm.as_ref(), seq);
             (key, nonce, record)
