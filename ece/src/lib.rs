@@ -39,7 +39,7 @@ fn derive_key<IKM: AsRef<[u8]>>(salt: [u8; 16], ikm: IKM) -> aes_gcm::Key<Aes128
     let mut okm = [0u8; 16];
     let hk = Hkdf::<Sha256>::new(Some(&salt), ikm.as_ref());
     hk.expand(info, &mut okm)
-        .expect("okm length is always 16, impossile for it to be too large");
+        .expect("okm length is always 16, cannot be too large");
 
     aes_gcm::Key::<Aes128Gcm>::from(okm)
 }
@@ -49,7 +49,7 @@ fn derive_nonce<IKM: AsRef<[u8]>>(salt: [u8; 16], ikm: IKM, seq: [u8; 12]) -> No
     let mut okm = [0u8; 12];
     let hk = Hkdf::<Sha256>::new(Some(salt.as_ref()), ikm.as_ref());
     hk.expand(info, &mut okm)
-        .expect("okm length is always 12, impossile for it to be too large");
+        .expect("okm length is always 12, cannot be too large");
 
     for i in 0..12 {
         okm[i] ^= seq[i]
