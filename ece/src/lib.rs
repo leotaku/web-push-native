@@ -132,6 +132,7 @@ pub fn encrypt<IKM: AsRef<[u8]>, KI: AsRef<[u8]>, R: Iterator<Item = Vec<u8>>>(
     let header = generate_encryption_header(salt, encrypted_record_size, keyid.as_ref())?;
 
     let records = records.enumerate().map(|(n, record)| {
+        let n: u64 = n.try_into().expect("index must fit into u64");
         let mut seq = [0u8; 12];
         seq[4..].copy_from_slice(&n.to_be_bytes());
         let key = derive_key(salt, ikm.as_ref());
@@ -212,6 +213,7 @@ pub fn decrypt<IKM: AsRef<[u8]>>(
         )
         .enumerate()
         .map(|(n, record)| {
+            let n: u64 = n.try_into().expect("index must fit into u64");
             let mut seq = [0u8; 12];
             seq[4..].copy_from_slice(&n.to_be_bytes());
             let key = derive_key(salt, ikm.as_ref());
