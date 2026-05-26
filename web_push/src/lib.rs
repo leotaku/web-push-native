@@ -54,7 +54,7 @@ mod serde_;
 #[cfg(test)]
 mod tests;
 #[cfg(feature = "vapid")]
-mod vapid;
+pub mod vapid;
 
 use std::time::Duration;
 

@@ -71,12 +71,16 @@ impl VapidSignature {
     }
 }
 
+impl ToString for VapidSignature {
+    fn to_string(&self) -> String {
+        let encoded_public =
+            Base64UrlUnpadded::encode_string(&self.public_key.public_key().to_bytes_uncompressed());
+        format!("vapid t={}, k={}", self.token, encoded_public)
+    }
+}
+
 impl From<VapidSignature> for http::HeaderValue {
     fn from(signature: VapidSignature) -> Self {
-        let encoded_public = Base64UrlUnpadded::encode_string(
-            &signature.public_key.public_key().to_bytes_uncompressed(),
-        );
-        let value = format!("vapid t={}, k={}", signature.token, encoded_public);
-        Self::try_from(value).expect("given string is always a valid header value")
+        Self::try_from(signature.to_string()).expect("given string is always a valid header value")
     }
 }
