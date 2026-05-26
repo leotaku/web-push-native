@@ -126,9 +126,10 @@ impl WebPushBuilder {
 
     /// Sets the valid duration for generated HTTP push requests.
     pub fn with_valid_duration(self, valid_duration: Duration) -> Self {
-        let mut this = self;
-        this.valid_duration = valid_duration;
-        this
+        Self {
+            valid_duration,
+            ..self
+        }
     }
 
     /// Sets the VAPID signature header for generated HTTP push requests.
