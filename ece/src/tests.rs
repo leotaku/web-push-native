@@ -1,6 +1,7 @@
-use super::*;
 use base64ct::{Base64UrlUnpadded, Encoding};
 use once_cell::sync::Lazy;
+
+use super::*;
 
 macro_rules! DECODE {
     ($e:expr) => {
@@ -80,9 +81,8 @@ mod rfc8188_example1 {
 }
 
 mod rfc8188_example2 {
-    use super::*;
+    use super::{rfc8188_example1::PLAINTEXT, *};
 
-    use super::rfc8188_example1::PLAINTEXT;
     const RS: u32 = 25;
     const IKM: Lazy<[u8; 16]> = DECODE!("BO3ZVPxUlnLORbVGMpbT1Q");
     const KEYID: &[u8] = "a1".as_bytes();

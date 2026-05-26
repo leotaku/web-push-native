@@ -1,11 +1,13 @@
-use super::{AddHeaders, WebPushBuilder};
+use std::time::Duration;
+
 use base64ct::{Base64UrlUnpadded, Encoding};
 use http::{header, Uri};
 use jwt_simple::{
     algorithms::{ECDSAP256KeyPairLike, ECDSAP256PublicKeyLike, ES256KeyPair, ES256PublicKey},
     claims::Claims,
 };
-use std::time::Duration;
+
+use super::{AddHeaders, WebPushBuilder};
 
 pub struct VapidAuthorization<'a> {
     vapid_kp: &'a ES256KeyPair,

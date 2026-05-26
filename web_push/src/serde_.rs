@@ -1,9 +1,11 @@
-use super::{Auth, WebPushBuilder};
+use std::{borrow::Cow, time::Duration};
+
 use base64ct::{Base64UrlUnpadded, Encoding};
 use http::Uri;
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-use std::{borrow::Cow, time::Duration};
+
+use super::{Auth, WebPushBuilder};
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename = "WebPushBuilder", rename_all = "camelCase")]

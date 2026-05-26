@@ -56,9 +56,7 @@ mod tests;
 #[cfg(feature = "vapid")]
 mod vapid;
 
-#[cfg(feature = "vapid")]
-pub use jwt_simple;
-pub use p256;
+use std::time::Duration;
 
 use aes_gcm::aead::{
     generic_array::{typenum::U16, GenericArray},
@@ -67,9 +65,11 @@ use aes_gcm::aead::{
 };
 use hkdf::Hkdf;
 use http::{self, header, Request, Uri};
+#[cfg(feature = "vapid")]
+pub use jwt_simple;
+pub use p256;
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
-use std::time::Duration;
 
 /// Error type for HTTP push failure modes
 #[derive(Debug)]

@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use axum::{
     extract,
     http::HeaderValue,
@@ -9,7 +11,6 @@ use base64ct::{Base64UrlUnpadded, Encoding};
 use hyper::{header, StatusCode};
 use hyper_util::{client::legacy::Client, rt::TokioExecutor};
 use once_cell::sync::Lazy;
-use std::sync::{Arc, RwLock};
 use tower_livereload::LiveReloadLayer;
 use web_push_native::{
     jwt_simple::algorithms::{ECDSAP256KeyPairLike, ES256KeyPair},

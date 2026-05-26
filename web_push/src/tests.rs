@@ -1,5 +1,6 @@
-use super::*;
 use base64ct::{Base64UrlUnpadded, Encoding};
+
+use super::*;
 
 macro_rules! DECODE {
     ($e:expr) => {
@@ -86,8 +87,9 @@ fn test_deserialize_owned() -> Result<(), jwt_simple::Error> {
 }
 
 mod rfc8291_example {
-    use super::*;
     use once_cell::sync::Lazy;
+
+    use super::*;
 
     const PLAINTEXT: &[u8] = b"When I grow up, I want to be a watermelon";
     const CIPHERTEXT: Lazy<Vec<u8>> = DECODE!("DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN");
