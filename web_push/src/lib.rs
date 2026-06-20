@@ -71,6 +71,9 @@ pub use p256;
 use p256::elliptic_curve::sec1::ToEncodedPoint;
 use sha2::Sha256;
 
+#[cfg(feature = "vapid")]
+use crate::vapid::VapidSignature;
+
 /// Error type for HTTP push failure modes
 #[derive(Debug)]
 pub enum Error {
@@ -279,4 +282,16 @@ fn view_keyid(encrypted_message: &[u8]) -> Result<&[u8], ece_native::Error> {
     }
 
     Ok(&encrypted_message[21..21 + idlen])
+}
+
+/// Lower-level VAPID header generation used for HTTP push request
+#[cfg(feature = "vapid")]
+pub fn vapid_header<T: ToString>(
+    endpoint: &Uri,
+    valid_duration: Duration,
+    contact: T,
+    key: &jwt_simple::algorithms::ES256KeyPair,
+) -> Result<http::HeaderValue, jwt_simple::Error> {
+    let vapid = VapidSignature::sign(endpoint, valid_duration, contact, key)?;
+    Ok(http::HeaderValue::from(vapid))
 }
