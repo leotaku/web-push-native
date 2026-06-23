@@ -18,7 +18,7 @@
 //! simple HTTP API for sending web-push notifications.
 //!
 //! ```
-//! use base64ct::{Base64UrlUnpadded, Encoding};
+//! use base64ct::{Base64UrlUnpadded, Encoding as _};
 //! use web_push_native::{
 //!     jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, Error, WebPushBuilder,
 //! };
@@ -26,16 +26,16 @@
 //! // Placeholders for variables provided by individual clients. In most cases,
 //! // these will be retrieved in-browser by calling `pushManager.subscribe` on
 //! // a service worker registration object.
-//! const ENDPOINT: &str = "";
-//! const P256DH: &str = "";
-//! const AUTH: &str = "";
+//! const ENDPOINT: &str = "https://example.com/";
+//! const P256DH: &str = "BLn9b-VR0ca83knDNZ32dCHGyjJp-1riX9ZTN40MqV8K_LpQmLqxC_DoHvqvFXO_nGdAB4W9dogZb_sM-uV4JbY";
+//! const AUTH: &str = "_ordMnz7uTCmrpBTeUV4Bw";
 //!
 //! // Placeholder for your private VAPID key. Keep this private and out of your
 //! // source tree in real projects!
-//! const VAPID: &str = "";
+//! const VAPID_PRIVATE: &str = "RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw";
 //!
-//! async fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Box<dyn std::error::Error>> {
-//!     let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID)?)?;
+//! fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Box<dyn std::error::Error>> {
+//!     let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID_PRIVATE)?)?;
 //!     let builder = WebPushBuilder::new(
 //!         ENDPOINT.parse()?,
 //!         PublicKey::from_sec1_bytes(&Base64UrlUnpadded::decode_vec(P256DH)?)?,
@@ -45,6 +45,10 @@
 //!
 //!     Ok(builder.build(content)?)
 //! }
+//!
+//! let request = push("hello!".into())?;
+//! #
+//! # Ok::<_, Box<dyn std::error::Error>>(())
 //! ```
 //!
 //! [`axum`]: https://docs.rs/axum
