@@ -1,3 +1,30 @@
+//! Utilities for creating VAPID signatures according to [RFC8292](https://datatracker.ietf.org/doc/html/rfc8292).
+//!
+//! [`WebPushBuilder::with_vapid`] can be used to automatically add
+//! VAPID signature headers to your responses. Use [`VapidSignature`]
+//! when you need to manually create and store VAPID signatures.
+//!
+//! # Example
+//!
+//! ```
+//! use base64ct::{Base64UrlUnpadded, Encoding as _};
+//! use web_push_native::{jwt_simple::algorithms::ES256KeyPair, vapid::VapidSignature};
+//!
+//! const VAPID_PRIVATE: &str = "RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw";
+//!
+//! let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID_PRIVATE)?)?;
+//! let signature = VapidSignature::sign(
+//!     &http::Uri::from_static("https://example.com/"),
+//!     std::time::Duration::new(60, 0),
+//!     "mailto:john.doe@example.com",
+//!     &key_pair,
+//! )?;
+//!
+//! assert!(signature.to_string().starts_with("vapid"));
+//! #
+//! # Ok::<_, Box<dyn std::error::Error>>(())
+//! ```
+
 use std::{fmt::Display, time::Duration};
 
 use base64ct::{Base64UrlUnpadded, Encoding};
@@ -9,6 +36,7 @@ use jwt_simple::{
 
 use super::{AddHeaders, WebPushBuilder};
 
+#[doc(hidden)]
 pub struct VapidAuthorization<'a> {
     vapid_kp: &'a ES256KeyPair,
     contact: &'a str,
@@ -38,7 +66,8 @@ impl<'a> AddHeaders for VapidAuthorization<'a> {
 }
 
 #[derive(Clone, Debug)]
-struct VapidSignature {
+/// VAPID (Voluntary Application Server Identification) signature
+pub struct VapidSignature {
     token: String,
     public_key: ES256PublicKey,
 }
@@ -46,7 +75,7 @@ struct VapidSignature {
 impl VapidSignature {
     /// Creates and signs a new [`VapidSignature`] which can be used
     /// as a HTTP header value.
-    fn sign<T: ToString>(
+    pub fn sign<T: ToString>(
         endpoint: &Uri,
         valid_duration: Duration,
         contact: T,
