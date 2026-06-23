@@ -153,8 +153,7 @@ impl WebPushBuilder {
     }
 }
 
-#[doc(hidden)]
-pub trait AddHeaders: Sized {
+trait AddHeaders: Sized {
     type Error: Into<Box<dyn std::error::Error + Sync + Send + 'static>>;
 
     fn add_headers(
@@ -174,6 +173,7 @@ impl AddHeaders for () {
     }
 }
 
+#[expect(private_bounds)]
 impl<A: AddHeaders> WebPushBuilder<A> {
     /// Generates a new HTTP push request according to the
     /// specifications of the builder.
