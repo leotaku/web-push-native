@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{fmt::Display, time::Duration};
 
 use base64ct::{Base64UrlUnpadded, Encoding};
 use http::{header, Uri};
@@ -71,11 +71,11 @@ impl VapidSignature {
     }
 }
 
-impl ToString for VapidSignature {
-    fn to_string(&self) -> String {
+impl Display for VapidSignature {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let encoded_public =
             Base64UrlUnpadded::encode_string(&self.public_key.public_key().to_bytes_uncompressed());
-        format!("vapid t={}, k={}", self.token, encoded_public)
+        write!(f, "vapid t={}, k={}", self.token, encoded_public)
     }
 }
 
