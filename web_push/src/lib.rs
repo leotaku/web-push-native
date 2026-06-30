@@ -27,26 +27,23 @@
 //! // these will be retrieved in-browser by calling `pushManager.subscribe` on
 //! // a service worker registration object.
 //! const ENDPOINT: &str = "https://example.com/";
-//! const P256DH: &str = "BLn9b-VR0ca83knDNZ32dCHGyjJp-1riX9ZTN40MqV8K_LpQmLqxC_DoHvqvFXO_nGdAB4W9dogZb_sM-uV4JbY";
+//! const P256DH: &str =
+//!     "BLn9b-VR0ca83knDNZ32dCHGyjJp-1riX9ZTN40MqV8K_LpQmLqxC_DoHvqvFXO_nGdAB4W9dogZb_sM-uV4JbY";
 //! const AUTH: &str = "_ordMnz7uTCmrpBTeUV4Bw";
 //!
 //! // Placeholder for your private VAPID key. Keep this private and out of your
 //! // source tree in real projects!
 //! const VAPID_PRIVATE: &str = "RS0WdYWWo1HajXg3NZR1olzCf31i-ZBGDkFyCs7j1jw";
 //!
-//! fn push(content: Vec<u8>) -> Result<http::Request<Vec<u8>>, Box<dyn std::error::Error>> {
-//!     let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID_PRIVATE)?)?;
-//!     let builder = WebPushBuilder::new(
-//!         ENDPOINT.parse()?,
-//!         PublicKey::from_sec1_bytes(&Base64UrlUnpadded::decode_vec(P256DH)?)?,
-//!         Auth::clone_from_slice(&Base64UrlUnpadded::decode_vec(AUTH)?),
-//!     )
-//!     .with_vapid(&key_pair, "mailto:john.doe@example.com");
+//! let key_pair = ES256KeyPair::from_bytes(&Base64UrlUnpadded::decode_vec(VAPID_PRIVATE)?)?;
+//! let builder = WebPushBuilder::new(
+//!     ENDPOINT.parse()?,
+//!     PublicKey::from_sec1_bytes(&Base64UrlUnpadded::decode_vec(P256DH)?)?,
+//!     Auth::clone_from_slice(&Base64UrlUnpadded::decode_vec(AUTH)?),
+//! )
+//! .with_vapid(&key_pair, "mailto:john.doe@example.com");
 //!
-//!     Ok(builder.build(content)?)
-//! }
-//!
-//! let request = push("hello!".into())?;
+//! builder.build("hello!")?;
 //! #
 //! # Ok::<_, Box<dyn std::error::Error>>(())
 //! ```
