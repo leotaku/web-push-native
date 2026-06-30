@@ -14,6 +14,7 @@ use once_cell::sync::Lazy;
 use tower_livereload::LiveReloadLayer;
 use web_push_native::{
     jwt_simple::algorithms::{ECDSAP256KeyPairLike, ES256KeyPair},
+    vapid::VapidAuthorization,
     WebPushBuilder,
 };
 
@@ -26,13 +27,12 @@ static VAPID_PRIVATE: Lazy<ES256KeyPair> = Lazy::new(|| {
 
 async fn push(
     message: serde_json::Value,
-    builder: WebPushBuilder,
+    builder: WebPushBuilder<VapidAuthorization<'static>>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let https = hyper_tls::HttpsConnector::new();
     let client = Client::builder(TokioExecutor::new()).build(https);
 
     let request = builder
-        .with_vapid(&VAPID_PRIVATE, "mailto:john.doe@example.com")
         .build(message.to_string())?
         .map(axum::body::Body::from);
 
@@ -45,7 +45,7 @@ type SharedState = Arc<RwLock<State>>;
 
 #[derive(Debug, Default)]
 struct State {
-    builder: Option<WebPushBuilder>,
+    builder: Option<WebPushBuilder<VapidAuthorization<'static>>>,
 }
 
 #[tokio::main]
@@ -85,7 +85,8 @@ fn api_routes() -> Router {
                 |extract::State(state): extract::State<SharedState>,
                  extract::Json(builder): extract::Json<WebPushBuilder>| {
                     if let Ok(ref mut state) = state.try_write() {
-                        state.builder = Some(builder)
+                        state.builder =
+                            Some(builder.with_vapid(&VAPID_PRIVATE, "mailto:john.doe@example.com"))
                     }
                     async {}
                 },
