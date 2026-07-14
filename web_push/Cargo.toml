@@ -26,7 +26,7 @@ base64ct = { version = "1.8.3", features = ["alloc", "std"], optional = true }
 ece-native = { version = "0.4.0", path = "../ece" }
 hkdf = "0.13.0"
 http = "1.4.2"
-jwt-simple = { version = "=0.12.12", default-features = false, features = ["pure-rust"], optional = true }
+jwt-simple = { version = "0.12.17", default-features = false, features = ["pure-rust"], optional = true }
 p256 = { version = "0.13.2", features = ["ecdh"] }
 serde = { version = "1.0.228", features = ["derive"], optional = true }
 sha2 = "0.11.0"
