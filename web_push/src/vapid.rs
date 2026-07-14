@@ -52,7 +52,7 @@ impl<'a> VapidAuthorization<'a> {
 impl<'a> std::fmt::Debug for VapidAuthorization<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("VapidAuthorization")
-            .field("vapid_kp", &"secret")
+            .field("vapid_kp", &self.vapid_kp)
             .field("contact", &self.contact)
             .finish()
     }
