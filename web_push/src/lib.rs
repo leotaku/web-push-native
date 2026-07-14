@@ -86,8 +86,8 @@ impl std::error::Error for Error {}
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Error::ECE(ece) => write!(f, "ece: {}", ece),
-            Error::Extension(ext) => write!(f, "extension: {}", ext),
+            Error::ECE(ece) => write!(f, "ECE: {}", ece),
+            Error::Extension(ext) => write!(f, "Extension: {}", ext),
         }
     }
 }
