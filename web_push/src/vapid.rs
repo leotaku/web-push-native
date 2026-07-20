@@ -37,7 +37,7 @@ use jwt_simple::{
 use super::{AddHeaders, WebPushBuilder};
 
 /// Marker for adding VAPID authorization to a [`WebPushBuilder`]
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct VapidAuthorization<'a> {
     vapid_kp: &'a ES256KeyPair,
     contact: &'a str,
@@ -46,15 +46,6 @@ pub struct VapidAuthorization<'a> {
 impl<'a> VapidAuthorization<'a> {
     pub(crate) fn new(vapid_kp: &'a ES256KeyPair, contact: &'a str) -> Self {
         Self { vapid_kp, contact }
-    }
-}
-
-impl<'a> std::fmt::Debug for VapidAuthorization<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("VapidAuthorization")
-            .field("vapid_kp", &self.vapid_kp)
-            .field("contact", &self.contact)
-            .finish()
     }
 }
 
