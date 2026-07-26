@@ -1,7 +1,8 @@
 [package]
-name = "example"
-version = "0.1.0"
 edition = "2021"
+name = "example"
+publish = false
+version = "0.1.0"
 
 [dependencies]
 axum = "0.8.9"
