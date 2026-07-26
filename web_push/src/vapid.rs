@@ -25,7 +25,7 @@
 //! # Ok::<_, Box<dyn std::error::Error>>(())
 //! ```
 
-use std::{fmt::Display, time::Duration};
+use std::{fmt::Display, sync::Arc, time::Duration};
 
 use base64ct::{Base64UrlUnpadded, Encoding};
 use http::{header, Uri};
@@ -61,6 +61,39 @@ impl<'a> AddHeaders for VapidAuthorization<'a> {
             this.valid_duration,
             this.http_auth.contact.to_string(),
             this.http_auth.vapid_kp,
+        )?;
+        Ok(builder.header(header::AUTHORIZATION, vapid))
+    }
+}
+
+/// Owned marker for adding VAPID authorization to a [`WebPushBuilder`]
+#[derive(Clone, Debug)]
+pub struct OwnedVapidAuthorization {
+    vapid_kp: Arc<ES256KeyPair>,
+    contact: String,
+}
+
+impl OwnedVapidAuthorization {
+    pub(crate) fn new(vapid_kp: ES256KeyPair, contact: String) -> Self {
+        Self {
+            vapid_kp: Arc::new(vapid_kp),
+            contact,
+        }
+    }
+}
+
+impl AddHeaders for OwnedVapidAuthorization {
+    type Error = jwt_simple::Error;
+
+    fn add_headers(
+        this: &WebPushBuilder<Self>,
+        builder: http::request::Builder,
+    ) -> Result<http::request::Builder, Self::Error> {
+        let vapid = VapidSignature::sign(
+            &this.endpoint,
+            this.valid_duration,
+            this.http_auth.contact.to_string(),
+            &this.http_auth.vapid_kp,
         )?;
         Ok(builder.header(header::AUTHORIZATION, vapid))
     }

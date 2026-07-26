@@ -148,6 +148,22 @@ impl WebPushBuilder {
             http_auth: vapid::VapidAuthorization::new(vapid_kp, contact),
         }
     }
+
+    /// Sets the owned VAPID signature header for generated HTTP push requests.
+    #[cfg(feature = "vapid")]
+    pub fn with_vapid_owned(
+        self,
+        vapid_kp: jwt_simple::algorithms::ES256KeyPair,
+        contact: String,
+    ) -> WebPushBuilder<vapid::OwnedVapidAuthorization> {
+        WebPushBuilder {
+            endpoint: self.endpoint,
+            valid_duration: self.valid_duration,
+            ua_public: self.ua_public,
+            ua_auth: self.ua_auth,
+            http_auth: vapid::OwnedVapidAuthorization::new(vapid_kp, contact),
+        }
+    }
 }
 
 trait AddHeaders: Sized {
