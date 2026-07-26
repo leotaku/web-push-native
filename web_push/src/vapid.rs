@@ -74,11 +74,8 @@ pub struct OwnedVapidAuthorization {
 }
 
 impl OwnedVapidAuthorization {
-    pub(crate) fn new(vapid_kp: ES256KeyPair, contact: String) -> Self {
-        Self {
-            vapid_kp: Arc::new(vapid_kp),
-            contact,
-        }
+    pub(crate) fn new(vapid_kp: Arc<ES256KeyPair>, contact: String) -> Self {
+        Self { vapid_kp, contact }
     }
 }
 

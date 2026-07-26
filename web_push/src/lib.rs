@@ -153,7 +153,7 @@ impl WebPushBuilder {
     #[cfg(feature = "vapid")]
     pub fn with_vapid_owned(
         self,
-        vapid_kp: jwt_simple::algorithms::ES256KeyPair,
+        vapid_kp: std::sync::Arc<jwt_simple::algorithms::ES256KeyPair>,
         contact: String,
     ) -> WebPushBuilder<vapid::OwnedVapidAuthorization> {
         WebPushBuilder {
