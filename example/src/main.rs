@@ -24,6 +24,7 @@ static VAPID_PRIVATE: Lazy<ES256KeyPair> = Lazy::new(|| {
         .expect("this to be valid base64");
     ES256KeyPair::from_bytes(&bytes).expect("this to be a valid private key")
 });
+static VAPID_CONTACT: &str = "mailto:john.doe@example.com";
 
 async fn push(
     message: serde_json::Value,
@@ -84,9 +85,9 @@ fn api_routes() -> Router {
             post(
                 |extract::State(state): extract::State<SharedState>,
                  extract::Json(builder): extract::Json<WebPushBuilder>| {
+                    let builder = builder.with_vapid(&VAPID_PRIVATE, VAPID_CONTACT);
                     if let Ok(ref mut state) = state.try_write() {
-                        state.builder =
-                            Some(builder.with_vapid(&VAPID_PRIVATE, "mailto:john.doe@example.com"))
+                        state.builder = Some(builder)
                     }
                     async {}
                 },
