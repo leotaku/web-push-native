@@ -6,11 +6,11 @@ edition = "2021"
 [dependencies]
 axum = "0.8.9"
 base64ct = { version = "1.8.3", features = ["alloc", "std"] }
-hyper = { version = "1.10.1", features = ["full"] }
+hyper = { version = "1.11.0", features = ["full"] }
 hyper-tls = "0.6.0"
 hyper-util = { version = "0.1.20", features = ["client"] }
 once_cell = "1.21.4"
-serde_json = "1.0.150"
-tokio = { version = "1.52.3", features = ["macros", "rt-multi-thread"] }
+serde_json = "1.0.151"
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread"] }
 tower-livereload = "0.10.3"
 web-push-native = { path = "../web_push" }
