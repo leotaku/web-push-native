@@ -20,10 +20,8 @@ macro_rules! DECODE {
 #[test]
 fn test_encryption_decryption() {
     let vapid_pair = jwt_simple::algorithms::ES256KeyPair::generate();
-    let ece_secret = p256::SecretKey::random(&mut OsRng);
-    let mut auth = vec![0u8; 16];
-    OsRng.fill_bytes(&mut auth);
-    let auth = Auth::clone_from_slice(&auth);
+    let ece_secret = p256::SecretKey::generate();
+    let auth = Auth::generate();
 
     let builder = WebPushBuilder::new(
         "https://example.com/".parse().unwrap(),
@@ -41,17 +39,15 @@ fn test_encryption_decryption() {
 #[test]
 fn test_encryption_decryption_with_serialization() {
     let vapid_pair = jwt_simple::algorithms::ES256KeyPair::generate();
-    let ece_secret = p256::SecretKey::random(&mut OsRng);
-    let mut auth = vec![0u8; 16];
-    OsRng.fill_bytes(&mut auth);
-    let auth = Auth::clone_from_slice(&auth);
+    let ece_secret = p256::SecretKey::generate();
+    let auth = Auth::generate();
 
     let json = serde_json::json!({
        "endpoint": "https://example.com/",
        "expirationTime": (),
        "keys": {
            "auth": Base64UrlUnpadded::encode_string(&auth),
-           "p256dh": Base64UrlUnpadded::encode_string(&ece_secret.public_key().to_encoded_point(false).to_bytes()),
+           "p256dh": Base64UrlUnpadded::encode_string(&ece_secret.public_key().to_sec1_point(false).to_bytes()),
       }
     }).to_string();
 
@@ -67,17 +63,15 @@ fn test_encryption_decryption_with_serialization() {
 
 #[test]
 fn test_deserialize_owned() -> Result<(), jwt_simple::Error> {
-    let ece_secret = p256::SecretKey::random(&mut OsRng);
-    let mut auth = vec![0u8; 16];
-    OsRng.fill_bytes(&mut auth);
-    let auth = Auth::clone_from_slice(&auth);
+    let ece_secret = p256::SecretKey::generate();
+    let auth = Auth::generate();
 
     let json = serde_json::json!({
        "endpoint": "https://example.com/",
        "expirationTime": (),
        "keys": {
            "auth": Base64UrlUnpadded::encode_string(&auth),
-           "p256dh": Base64UrlUnpadded::encode_string(&ece_secret.public_key().to_encoded_point(false).to_bytes()),
+           "p256dh": Base64UrlUnpadded::encode_string(&ece_secret.public_key().to_sec1_point(false).to_bytes()),
       }
     });
 
@@ -93,10 +87,7 @@ mod rfc8291_example {
 
     const PLAINTEXT: &[u8] = b"When I grow up, I want to be a watermelon";
     const CIPHERTEXT: Lazy<Vec<u8>> = DECODE!("DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN");
-    const AUTH: Lazy<Auth> = DECODE!(
-        |it| Ok::<_, ()>(Auth::clone_from_slice(it)),
-        "BTBZMqHH6r4Tts7J_aSIgg"
-    );
+    const AUTH: Lazy<Auth> = DECODE!(|it: &[u8]| Auth::try_from(it), "BTBZMqHH6r4Tts7J_aSIgg");
     const UA_PRIVATE: Lazy<p256::SecretKey> = DECODE!(
         p256::SecretKey::from_slice,
         "q1dXpw3UpT5VOmu_cf_v6ih07Aems3njxI-JWgLcM94"

@@ -5,8 +5,8 @@
 mod tests;
 
 use aes_gcm::{
-    aead::{consts::U12, generic_array::typenum::Unsigned, Tag},
-    AeadInPlace, Aes128Gcm, KeyInit, Nonce,
+    aead::{array::typenum::Unsigned, consts::U12, Tag},
+    AeadInOut, Aes128Gcm, KeyInit, Nonce,
 };
 use hkdf::Hkdf;
 use sha2::Sha256;
@@ -166,7 +166,12 @@ fn decrypt_record<'a>(
     let (msg, tag) = record.as_mut().split_at_mut(tag_pos);
 
     Aes128Gcm::new(key)
-        .decrypt_in_place_detached(nonce, b"", msg, Tag::<Aes128Gcm>::from_slice(tag))
+        .decrypt_inout_detached(
+            nonce,
+            b"",
+            msg.into(),
+            &Tag::<Aes128Gcm>::try_from(&*tag).expect("tag length is always TagSize"),
+        )
         .map_err(|_| Error::Aes128Gcm)?;
 
     let pad_index = msg

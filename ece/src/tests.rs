@@ -38,8 +38,8 @@ mod rfc8188_example1 {
     #[test]
     fn test_key_derivation() {
         assert_eq!(
-            &derive_key(*SALT, *IKM),
-            aes_gcm::Key::<Aes128Gcm>::from_slice(&*CEK)
+            derive_key(*SALT, *IKM),
+            aes_gcm::Key::<Aes128Gcm>::from(*CEK)
         );
     }
 

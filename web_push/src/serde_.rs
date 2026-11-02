@@ -2,7 +2,7 @@ use std::{borrow::Cow, time::Duration};
 
 use base64ct::{Base64UrlUnpadded, Encoding};
 use http::Uri;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
 
 use super::{Auth, WebPushBuilder};
@@ -39,14 +39,13 @@ fn auth_to_bytes<S: Serializer>(auth: &Auth, s: S) -> Result<S::Ok, S::Error> {
 
 fn bytes_to_auth<'de, D: Deserializer<'de>>(d: D) -> Result<Auth, D::Error> {
     let b64: Cow<str> = Deserialize::deserialize(d)?;
-    Ok(Auth::clone_from_slice(
-        &Base64UrlUnpadded::decode_vec(&b64).map_err(de::Error::custom)?,
-    ))
+    Auth::try_from(&*Base64UrlUnpadded::decode_vec(&b64).map_err(de::Error::custom)?)
+        .map_err(de::Error::custom)
 }
 
 fn p256_to_bytes<S: Serializer>(auth: &p256::PublicKey, s: S) -> Result<S::Ok, S::Error> {
     s.serialize_str(&Base64UrlUnpadded::encode_string(
-        auth.to_encoded_point(false).as_bytes(),
+        auth.to_sec1_point(false).as_bytes(),
     ))
 }
 
