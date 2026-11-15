@@ -59,13 +59,12 @@ pub mod vapid;
 
 use std::time::Duration;
 
-use aes_gcm::aead::Generate;
 use hkdf::Hkdf;
 use http::{self, header, Request, Uri};
 #[cfg(feature = "vapid")]
 pub use jwt_simple;
 pub use p256;
-use p256::elliptic_curve::sec1::ToSec1Point;
+use p256::elliptic_curve::{sec1::ToSec1Point, Generate};
 use sha2::Sha256;
 
 /// Error type for HTTP push failure modes

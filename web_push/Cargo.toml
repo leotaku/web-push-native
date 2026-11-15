@@ -21,7 +21,6 @@ serialization = ["dep:serde", "dep:base64ct"]
 vapid = ["dep:jwt-simple", "dep:base64ct"]
 
 [dependencies]
-aes-gcm = "0.11.1"
 base64ct = { version = "1.8.3", features = ["alloc", "std"], optional = true }
 ece-native = { version = "0.5.0", path = "../ece" }
 hkdf = "0.13.0"
