@@ -72,7 +72,7 @@ use sha2::Sha256;
 pub enum Error {
     /// Internal ECE error
     ECE(ece_native::Error),
-    /// Internal error coming from an http auth provider
+    /// Internal error coming from an HTTP auth provider
     Extension(Box<dyn std::error::Error + Send + Sync + 'static>),
 }
 
