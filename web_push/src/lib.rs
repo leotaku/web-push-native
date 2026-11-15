@@ -39,7 +39,7 @@
 //! let builder = WebPushBuilder::new(
 //!     ENDPOINT.parse()?,
 //!     PublicKey::from_sec1_bytes(&Base64UrlUnpadded::decode_vec(P256DH)?)?,
-//!     Auth::clone_from_slice(&Base64UrlUnpadded::decode_vec(AUTH)?),
+//!     Auth::try_from(&*Base64UrlUnpadded::decode_vec(AUTH)?)?,
 //! )
 //! .with_vapid(&key_pair, "mailto:john.doe@example.com");
 //!
@@ -59,17 +59,13 @@ pub mod vapid;
 
 use std::time::Duration;
 
-use aes_gcm::aead::{
-    generic_array::{typenum::U16, GenericArray},
-    rand_core::RngCore,
-    OsRng,
-};
+use aes_gcm::aead::Generate;
 use hkdf::Hkdf;
 use http::{self, header, Request, Uri};
 #[cfg(feature = "vapid")]
 pub use jwt_simple;
 pub use p256;
-use p256::elliptic_curve::sec1::ToEncodedPoint;
+use p256::elliptic_curve::sec1::ToSec1Point;
 use sha2::Sha256;
 
 /// Error type for HTTP push failure modes
@@ -93,7 +89,7 @@ impl std::fmt::Display for Error {
 }
 
 /// HTTP push authentication secret
-pub type Auth = GenericArray<u8, U16>;
+pub type Auth = [u8; 16];
 
 /// Reusable builder for HTTP push requests
 #[derive(Clone, Debug)]
@@ -201,9 +197,8 @@ pub fn encrypt(
     ua_public: &p256::PublicKey,
     ua_auth: &Auth,
 ) -> Result<Vec<u8>, Error> {
-    let mut salt = [0u8; 16];
-    OsRng.fill_bytes(&mut salt);
-    let as_secret = p256::SecretKey::random(&mut OsRng);
+    let salt = <[u8; 16]>::generate();
+    let as_secret = p256::SecretKey::generate();
     encrypt_predictably(salt, message, &as_secret, ua_public, ua_auth).map_err(Error::ECE)
 }
 
@@ -218,7 +213,7 @@ fn encrypt_predictably(
     let shared = p256::ecdh::diffie_hellman(as_secret.to_nonzero_scalar(), ua_public.as_affine());
 
     let ikm = compute_ikm(ua_auth, &shared, ua_public, &as_public);
-    let keyid = as_public.as_affine().to_encoded_point(false);
+    let keyid = as_public.as_affine().to_sec1_point(false);
     let encrypted_record_length = (message.len() + 17)
         .try_into()
         .map_err(|_| ece_native::Error::RecordLengthInvalid)?;
@@ -258,8 +253,8 @@ fn compute_ikm(
     let mut info = Vec::new();
     info.extend_from_slice(&b"WebPush: info"[..]);
     info.push(0u8);
-    info.extend_from_slice(ua_public.as_affine().to_encoded_point(false).as_bytes());
-    info.extend_from_slice(as_public.as_affine().to_encoded_point(false).as_bytes());
+    info.extend_from_slice(ua_public.as_affine().to_sec1_point(false).as_bytes());
+    info.extend_from_slice(as_public.as_affine().to_sec1_point(false).as_bytes());
 
     let mut okm = [0u8; 32];
     let hk = Hkdf::<Sha256>::new(Some(auth), shared.raw_secret_bytes().as_ref());
