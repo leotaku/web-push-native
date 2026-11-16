@@ -1,0 +1,28 @@
+[graph]
+all-features = true
+
+[advisories]
+ignore = [
+  { id = "RUSTSEC-2023-0071", reason = "RSA private key operations are not used, but they are available through the jwt-simple reexport" },
+]
+
+[licenses]
+allow = [
+  "Apache-2.0",
+  "BSD-2-Clause",
+  "BSD-3-Clause",
+  "ISC",
+  "MIT",
+  "Unicode-3.0",
+]
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "allow"
+# wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
